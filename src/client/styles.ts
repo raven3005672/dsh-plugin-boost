@@ -163,45 +163,40 @@ html[data-dsh-boost-shift] [class*='widthHandle'] {
   font-size: 12px;
   line-height: 1.7;
 }
-/* A row is a tinted block with a colour bar, not a bordered card: the bar
-   carries the kind (warm = actionable note, cool = plain mark), the tint keeps
-   the row readable as one unit, and hover/selection deepen the same hue. */
+/* Option A: the row is transparent; the kind is carried by the 3px colour bar
+   alone, and hover/selection are neutral washes. Tinted fills on every row
+   made the list read as a colour chart next to the conversation. */
 .dsh-boost-item {
   --dsh-boost-accent: #b6bcc6;
-  --dsh-boost-tint: rgba(38, 49, 72, 0.03);
   border: 0;
   border-left: 3px solid var(--dsh-boost-accent);
-  border-radius: 6px;
-  padding: 6px 8px;
+  border-radius: 8px;
+  padding: 6px 8px 6px 9px;
   margin-bottom: 4px;
   cursor: pointer;
-  background: var(--dsh-boost-tint);
+  background: transparent;
   box-shadow: none;
   transition: background-color 120ms ease;
 }
 .dsh-boost-item[data-kind='quote'] {
   --dsh-boost-accent: #f0b429;
-  --dsh-boost-tint: rgba(240, 180, 41, 0.09);
 }
 .dsh-boost-item[data-kind='mark'] {
   --dsh-boost-accent: #38a3e8;
-  --dsh-boost-tint: rgba(56, 163, 232, 0.09);
 }
 .dsh-boost-item:hover {
-  background: color-mix(in srgb, var(--dsh-boost-accent) 14%, transparent);
+  background: rgba(38, 49, 72, 0.04);
 }
 .dsh-boost-item[data-active='true'] {
-  background: color-mix(in srgb, var(--dsh-boost-accent) 18%, transparent);
-  box-shadow: inset 0 0 0 1px rgba(15, 17, 21, 0.25);
+  background: rgba(38, 49, 72, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(15, 17, 21, 0.12);
 }
-body[data-ds-dark-theme] .dsh-boost-item[data-kind='quote'] {
-  --dsh-boost-tint: rgba(240, 180, 41, 0.14);
-}
-body[data-ds-dark-theme] .dsh-boost-item[data-kind='mark'] {
-  --dsh-boost-tint: rgba(56, 163, 232, 0.14);
+body[data-ds-dark-theme] .dsh-boost-item:hover {
+  background: rgba(255, 255, 255, 0.06);
 }
 body[data-ds-dark-theme] .dsh-boost-item[data-active='true'] {
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
 }
 
 .dsh-boost-quote[data-kind='mark'] {
@@ -247,7 +242,7 @@ body[data-ds-dark-theme] .dsh-boost-quote[data-kind='mark'] {
   cursor: pointer;
 }
 .dsh-boost-icon-button:hover {
-  background: color-mix(in srgb, var(--dsh-boost-accent, #b6bcc6) 18%, transparent);
+  background: color-mix(in srgb, var(--dsh-boost-accent, #b6bcc6) 12%, transparent);
   color: var(--dsw-alias-label-primary, #1f2328);
 }
 .dsh-boost-note {
@@ -353,7 +348,7 @@ body[data-ds-dark-theme] .dsh-boost-quote[data-kind='mark'] {
   cursor: pointer;
 }
 .dsh-boost-action:hover {
-  background: color-mix(in srgb, var(--dsh-boost-accent, #b6bcc6) 16%, transparent);
+  background: color-mix(in srgb, var(--dsh-boost-accent, #b6bcc6) 12%, transparent);
 }
 .dsh-boost-more-slot {
   margin-left: auto;
@@ -373,7 +368,7 @@ body[data-ds-dark-theme] .dsh-boost-quote[data-kind='mark'] {
   cursor: pointer;
 }
 .dsh-boost-more:hover {
-  background: color-mix(in srgb, var(--dsh-boost-accent, #b6bcc6) 16%, transparent);
+  background: color-mix(in srgb, var(--dsh-boost-accent, #b6bcc6) 12%, transparent);
   color: var(--dsw-alias-label-primary, #1f2328);
 }
 
