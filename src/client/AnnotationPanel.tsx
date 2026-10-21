@@ -77,8 +77,8 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
   const [box, setBox] = useState<{ top: number; maxHeight: number; right: number } | null>(null)
 
   // Keep the card between the transcript's top edge (below the header rule)
-  // and the composer card's bottom border, so it never covers either rule and
-  // never runs past the input box.
+  // and the composer's top edge, so it never covers the header rule and never
+  // grows over the input box.
   useLayoutEffect(() => {
     if (!snapshot.panelOpen) {
       setBox(null)
@@ -95,7 +95,9 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
       const card = document.querySelector('[data-composer-card]')
       const scrollBox = scroll === null ? null : scroll.getBoundingClientRect()
       const top = scrollBox === null ? 84 : Math.round(scrollBox.top + 8)
-      const limit = card === null ? window.innerHeight - 96 : Math.round(card.getBoundingClientRect().bottom - 8)
+      // The card stops at the composer's top edge: growing over the input box
+      // hid the draft the user was about to edit.
+      const limit = card === null ? window.innerHeight - 96 : Math.round(card.getBoundingClientRect().top - 8)
       const right = scrollBox === null
         ? 12
         : Math.max(12, Math.round(window.innerWidth - scrollBox.right + 10))
