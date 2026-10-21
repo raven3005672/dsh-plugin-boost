@@ -174,8 +174,8 @@ html[data-dsh-boost-shift] [class*='widthHandle'] {
   padding: 6px 8px 6px 9px;
   margin-bottom: 8px;
   cursor: pointer;
-  background: transparent;
-  box-shadow: none;
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 1px 3px rgba(15, 17, 21, 0.07), 0 0 1px rgba(15, 17, 21, 0.1);
   transition: background-color 120ms ease;
 }
 .dsh-boost-item[data-kind='quote'] {
@@ -189,14 +189,24 @@ html[data-dsh-boost-shift] [class*='widthHandle'] {
 }
 .dsh-boost-item[data-active='true'] {
   background: rgba(38, 49, 72, 0.07);
-  box-shadow: inset 0 0 0 1px rgba(15, 17, 21, 0.12);
+  box-shadow:
+    0 1px 3px rgba(15, 17, 21, 0.09),
+    0 0 1px rgba(15, 17, 21, 0.12),
+    inset 0 0 0 1px rgba(15, 17, 21, 0.12);
 }
 body[data-ds-dark-theme] .dsh-boost-item:hover {
   background: rgba(255, 255, 255, 0.06);
 }
+body[data-ds-dark-theme] .dsh-boost-item {
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45), 0 0 1px rgba(255, 255, 255, 0.12);
+}
 body[data-ds-dark-theme] .dsh-boost-item[data-active='true'] {
   background: rgba(255, 255, 255, 0.1);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.45),
+    0 0 1px rgba(255, 255, 255, 0.14),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.16);
 }
 
 .dsh-boost-quote[data-kind='mark'] {
