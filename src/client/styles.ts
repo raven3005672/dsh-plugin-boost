@@ -120,12 +120,23 @@ html[data-dsh-boost-shift] [data-conversation-scroll] {
   flex: 0 1 auto;
   font: inherit;
   font-size: 11px;
-  padding: 1px 4px;
+  padding: 1px 16px 1px 4px;
   border-radius: 6px;
   border: 1px solid var(--dsw-alias-border-l2, #e5e7eb);
-  background: var(--dsw-alias-bg-base, #ffffff);
-  color: var(--dsw-alias-label-secondary, #6b7280);
+  /* A native menu-list select keeps the UA's light chrome even in the dark
+     palette; dropping the appearance is the only way to honour our colours. */
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: var(--dsw-alias-bg-layer-2, #ffffff);
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%2381858c' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+  background-size: 9px;
+  color: var(--dsw-alias-label-primary, #1f2328);
   cursor: pointer;
+}
+body[data-ds-dark-theme] .dsh-boost-filter {
+  color-scheme: dark;
 }
 .dsh-boost-list {
   flex: 1;
@@ -170,7 +181,7 @@ html[data-dsh-boost-shift] [data-conversation-scroll] {
 }
 .dsh-boost-item[data-active='true'] {
   background: color-mix(in srgb, var(--dsh-boost-accent) 18%, transparent);
-  box-shadow: inset 0 0 0 1px rgba(15, 17, 21, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(15, 17, 21, 0.25);
 }
 body[data-ds-dark-theme] .dsh-boost-item[data-kind='quote'] {
   --dsh-boost-tint: rgba(240, 180, 41, 0.14);
@@ -179,7 +190,7 @@ body[data-ds-dark-theme] .dsh-boost-item[data-kind='mark'] {
   --dsh-boost-tint: rgba(56, 163, 232, 0.14);
 }
 body[data-ds-dark-theme] .dsh-boost-item[data-active='true'] {
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.34);
 }
 
 .dsh-boost-quote[data-kind='mark'] {
