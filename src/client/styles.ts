@@ -31,7 +31,7 @@ export const STYLES = `
    shift goes on the scroll container: the column moves left as a whole and
    keeps its own max width. */
 html[data-dsh-boost-shift] [data-conversation-scroll] {
-  padding-right: 312px;
+  padding-right: var(--dsh-boost-shift, 312px);
   transition: padding-right 180ms ease;
 }
 

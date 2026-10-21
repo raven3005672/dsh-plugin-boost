@@ -69,7 +69,7 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
   const [presetFor, setPresetFor] = useState<string | null>(null)
   const [overflowFor, setOverflowFor] = useState<string | null>(null)
   const [editing, setEditing] = useState<{ id: string; text: string } | null>(null)
-  const [box, setBox] = useState<{ top: number; maxHeight: number } | null>(null)
+  const [box, setBox] = useState<{ top: number; maxHeight: number; right: number } | null>(null)
 
   // Keep the card between the transcript's top edge (below the header rule)
   // and the composer card's bottom border, so it never covers either rule and
@@ -79,13 +79,29 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
       setBox(null)
       return
     }
-    /** Re-measure the two anchors the card is allowed to occupy. */
+    /**
+     * Re-measure the three anchors: the transcript's top edge, the composer's
+     * bottom edge, and the transcript's right edge — the card hugs that edge
+     * rather than the window, so opening the right sidebar moves it along
+     * instead of leaving it floating over the sidebar.
+     */
     const measure = (): void => {
       const scroll = document.querySelector('[data-conversation-scroll]')
       const card = document.querySelector('[data-composer-card]')
-      const top = scroll === null ? 84 : Math.round(scroll.getBoundingClientRect().top + 8)
+      const scrollBox = scroll === null ? null : scroll.getBoundingClientRect()
+      const top = scrollBox === null ? 84 : Math.round(scrollBox.top + 8)
       const limit = card === null ? window.innerHeight - 96 : Math.round(card.getBoundingClientRect().bottom - 8)
-      setBox({ top, maxHeight: Math.max(160, limit - top) })
+      const right = scrollBox === null
+        ? 12
+        : Math.max(12, Math.round(window.innerWidth - scrollBox.right + 10))
+      // The shift the panel applies to the transcript shrinks with it: a
+      // sidebar-open column cannot spare a fixed 312px without collapsing the
+      // text, so it gives up only what keeps a readable measure.
+      if (scrollBox !== null) {
+        const shift = scrollBox.width >= 760 ? 312 : Math.max(0, Math.min(312, Math.round(scrollBox.width - 320)))
+        document.documentElement.style.setProperty('--dsh-boost-shift', `${shift}px`)
+      }
+      setBox({ top, maxHeight: Math.max(160, limit - top), right })
     }
     measure()
     window.addEventListener('resize', measure)
@@ -145,7 +161,7 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
       data-dsh-boost=""
       role="dialog"
       aria-label={t('panel.title')}
-      style={box === null ? undefined : { top: box.top, maxHeight: box.maxHeight }}
+      style={box === null ? undefined : { top: box.top, maxHeight: box.maxHeight, right: box.right }}
     >
       <header className="dsh-boost-panel-head">
         <span className="dsh-boost-panel-title">
