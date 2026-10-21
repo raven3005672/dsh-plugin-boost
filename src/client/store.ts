@@ -1,0 +1,428 @@
+/**
+ * Annotation state for one browser.
+ *
+ * Annotations are keyed by session: a range points at a message seat, and a
+ * seat only exists inside its own session, so the list always shows the
+ * annotations of the conversation in front of the user. Nothing here reaches
+ * the Session log — storage is the browser's own localStorage.
+ */
+import type { Annotation, AnnotationKind, InputActionsLike, ResolveStatus, TextModel } from './contract.ts'
+import { locate } from './anchor.ts'
+import { clear, paint } from './highlights.ts'
+
+/** Versioned storage prefix; bumping the suffix is a breaking data change. */
+const STORAGE_PREFIX = 'dsh-plugin-boost/v1/'
+
+/** How long a transient notice stays on screen. */
+const NOTICE_MS = 2600
+
+/** Browser-wide flag: show locating status and offsets in the list. */
+const DIAGNOSTICS_KEY = 'dsh-plugin-boost/diagnostics'
+
+/** Browser-wide list filter. */
+const FILTER_KEY = 'dsh-plugin-boost/filter'
+
+/** What the list shows: actionable notes only, plain marks only, or both. */
+export type ListFilter = AnnotationKind | 'all'
+
+/** What the UI renders from. */
+export interface BoostSnapshot {
+  /** Session currently displayed, absent before the first binding. */
+  readonly sessionId: string | undefined
+  /** Annotations of the current session, newest last. */
+  readonly annotations: readonly Annotation[]
+  /** Locating outcome per annotation id. */
+  readonly statuses: ReadonlyMap<string, ResolveStatus>
+  /** Whether the floating panel is open. */
+  readonly panelOpen: boolean
+  /** Annotation the list highlighted last. */
+  readonly activeId: string | undefined
+  /** Transient line shown after an action. */
+  readonly notice: string | undefined
+  /** Whether the list exposes locating status and offsets. */
+  readonly diagnostics: boolean
+  /** Which kinds the list currently shows. */
+  readonly filter: ListFilter
+  /** Monotonic revision; identity changes on every notify. */
+  readonly revision: number
+}
+
+/** Live editor facts the store needs for a chip-safe insert. */
+export interface InputFacts {
+  /** Clipboard projection of the composer. */
+  readonly draft: string
+  /** Submission phase; anything but `plain` means the editor is locked. */
+  readonly phase: string
+  /** Number of reference chips in the draft. */
+  readonly occurrences: number
+  /** Actions for this session, when the dock entry is mounted. */
+  readonly actions: InputActionsLike | undefined
+}
+
+/** Result of pushing composed text into the composer. */
+export type InsertResult = 'ok' | 'busy' | 'failed'
+
+/** Storage key for one session. */
+function storageKey(sessionId: string): string {
+  return `${STORAGE_PREFIX}${sessionId}`
+}
+
+/**
+ * Read the stored annotations for a session.
+ * @param sessionId - owning session.
+ * @returns stored annotations, or an empty list when absent or unreadable.
+ */
+function readStored(sessionId: string): Annotation[] {
+  try {
+    const raw = localStorage.getItem(storageKey(sessionId))
+    if (raw === null) return []
+    const parsed: unknown = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    // Records written before kinds existed are actionable notes: that was the
+    // only behaviour, so restoring them as marks would silently hide them.
+    return parsed.map(item => ({ ...(item as Annotation), kind: (item as Partial<Annotation>).kind ?? 'quote' }))
+      .filter((item): item is Annotation => {
+      if (typeof item !== 'object' || item === null) return false
+      const candidate = item as Partial<Annotation>
+      return typeof candidate.id === 'string'
+        && (candidate.kind === undefined || candidate.kind === 'mark' || candidate.kind === 'quote')
+        && typeof candidate.nodeKey === 'string'
+        && typeof candidate.start === 'number'
+        && typeof candidate.end === 'number'
+        && typeof candidate.quote === 'string'
+    })
+  } catch {
+    // Storage disabled or hand-edited content: start empty rather than crash.
+    return []
+  }
+}
+
+/**
+ * Persist the annotations of a session.
+ * @param sessionId - owning session.
+ * @param list - annotations to write.
+ */
+function writeStored(sessionId: string, list: readonly Annotation[]): void {
+  try {
+    localStorage.setItem(storageKey(sessionId), JSON.stringify(list))
+  } catch {
+    // Quota or privacy mode: the list stays live for this document only.
+  }
+}
+
+/** Owner of every annotation-related fact the UI reads. */
+export class BoostStore {
+  private sessionId: string | undefined
+  private annotations: Annotation[] = []
+  private statuses = new Map<string, ResolveStatus>()
+  private panelOpen = false
+  private activeId: string | undefined
+  private notice: string | undefined
+  private diagnostics = false
+  private filter: ListFilter = 'quote'
+  private input: InputFacts = { draft: '', phase: 'plain', occurrences: 0, actions: undefined }
+  private listeners = new Set<() => void>()
+  private noticeTimer = 0
+  private signature = ''
+  private snapshot: BoostSnapshot = {
+    sessionId: undefined,
+    annotations: [],
+    statuses: new Map(),
+    panelOpen: false,
+    activeId: undefined,
+    notice: undefined,
+    diagnostics: false,
+    filter: 'quote',
+    revision: 0,
+  }
+
+  /**
+   * Point the store at a session and refresh the editor facts.
+   * @param sessionId - session the conversation column is showing.
+   * @param input - current composer facts for that session.
+   */
+  bind(sessionId: string, input: InputFacts): void {
+    this.input = input
+    if (this.sessionId === sessionId) return
+    clear()
+    this.sessionId = sessionId
+    this.annotations = readStored(sessionId)
+    this.activeId = undefined
+    this.statuses = new Map()
+    this.refresh()
+  }
+
+  /** Drop highlights and listeners; used when the plugin's fiber disposes. */
+  dispose(): void {
+    clear()
+    this.listeners.clear()
+    window.clearTimeout(this.noticeTimer)
+  }
+
+  /**
+   * Subscribe to state changes.
+   * @param listener - called after every notify.
+   * @returns unsubscribe.
+   */
+  subscribe(listener: () => void): () => void {
+    this.listeners.add(listener)
+    return () => { this.listeners.delete(listener) }
+  }
+
+  /** @returns the current immutable snapshot. */
+  getSnapshot(): BoostSnapshot {
+    return this.snapshot
+  }
+
+  /**
+   * Re-locate every annotation of the current session and repaint.
+   * Cheap enough to run once per animation frame while a message streams.
+   */
+  refresh(): void {
+    if (this.sessionId === undefined) return
+    const cache = new Map<string, TextModel>()
+    const quoteRanges: Range[] = []
+    const markRanges: Range[] = []
+    const statuses = new Map<string, ResolveStatus>()
+    let activeQuote: Range | undefined
+    let activeMark: Range | undefined
+    for (const annotation of this.annotations) {
+      const result = locate(annotation, cache)
+      statuses.set(annotation.id, result.status)
+      if (result.range === undefined) continue
+      if (annotation.kind === 'mark') {
+        markRanges.push(result.range)
+        if (annotation.id === this.activeId) activeMark = result.range
+      } else {
+        quoteRanges.push(result.range)
+        if (annotation.id === this.activeId) activeQuote = result.range
+      }
+    }
+    this.statuses = statuses
+    paint(quoteRanges, markRanges, activeQuote, activeMark)
+    // Painting itself mutates no DOM, but the panel re-render does; skip the
+    // notify when nothing the UI reads has moved, so the observer that drove
+    // this refresh cannot re-trigger itself.
+    // Kind and note are part of the signature: converting or editing an
+    // annotation moves no offsets, so an id:status signature alone would skip
+    // the notify and leave the panel showing stale text.
+    const list = this.annotations
+      .map(annotation => `${annotation.id}:${annotation.kind}:${annotation.note}:${statuses.get(annotation.id) ?? ''}`)
+      .join(',')
+    const signature = `${this.sessionId}|${this.activeId ?? ''}|${list}`
+    if (signature === this.signature) return
+    this.signature = signature
+    this.publish()
+  }
+
+  /**
+   * Store a new annotation and paint it.
+   * @param annotation - the range and note to keep.
+   */
+  add(annotation: Annotation): void {
+    if (this.sessionId === undefined) return
+    this.annotations = [...this.annotations, { ...annotation, sessionId: this.sessionId }]
+    this.activeId = annotation.id
+    writeStored(this.sessionId, this.annotations)
+    this.refresh()
+  }
+
+  /**
+   * Delete one annotation.
+   * @param id - annotation to drop.
+   */
+  remove(id: string): void {
+    if (this.sessionId === undefined) return
+    this.annotations = this.annotations.filter(annotation => annotation.id !== id)
+    if (this.activeId === id) this.activeId = undefined
+    writeStored(this.sessionId, this.annotations)
+    this.refresh()
+  }
+
+  /**
+   * Mark one annotation as the list's current item.
+   * @param id - annotation id, or undefined to clear the highlight.
+   */
+  setActive(id: string | undefined): void {
+    this.activeId = id
+    this.refresh()
+  }
+
+  /**
+   * Find the annotation a selection overlaps.
+   * @param flowKey - rendered seat the selection sits in.
+   * @param start - selection start offset.
+   * @param end - selection end offset.
+   * @returns the first overlapping annotation, if any.
+   */
+  findOverlapping(flowKey: string, start: number, end: number): Annotation | undefined {
+    return this.annotations.find(annotation =>
+      annotation.flowKey === flowKey && annotation.start < end && start < annotation.end)
+  }
+
+  /**
+   * Scroll the conversation so one annotation is centred in its scroll port.
+   *
+   * The scroll port is the conversation's own scroll container, not the
+   * document: centring inside it keeps the target clear of the sticky header
+   * and of the composer.
+   * @param id - annotation to reveal.
+   */
+  reveal(id: string): void {
+    const annotation = this.annotations.find(candidate => candidate.id === id)
+    if (annotation === undefined) return
+    const range = locate(annotation).range
+    if (range === undefined) return
+    const element = range.startContainer.parentElement
+    if (element === null) return
+    const scroller = element.closest('[data-conversation-scroll]')
+    if (!(scroller instanceof HTMLElement)) {
+      element.scrollIntoView({ block: 'center' })
+      return
+    }
+    // Centre the range itself, not its enclosing element: a paragraph can be
+    // many lines tall and would land its first line wherever the block starts.
+    const rect = range.getBoundingClientRect()
+    const box = scroller.getBoundingClientRect()
+    // scrollBy, not a scrollTop write: the chat view owns follow-tail and
+    // overrides a jumped scrollTop, while a relative scroll survives it.
+    scroller.scrollBy({ top: rect.top - box.top - box.height / 2 + rect.height / 2 })
+  }
+
+  /**
+   * Open or close the floating panel and shift the conversation column.
+   * @param open - target state; omitted toggles.
+   */
+  togglePanel(open?: boolean): void {
+    this.panelOpen = open ?? !this.panelOpen
+    if (this.panelOpen) document.documentElement.setAttribute('data-dsh-boost-shift', '')
+    else document.documentElement.removeAttribute('data-dsh-boost-shift')
+    this.publish()
+    if (this.panelOpen) this.refresh()
+  }
+
+  /** Read the persisted display flags; call once before the first render. */
+  loadDiagnostics(): void {
+    try {
+      this.diagnostics = localStorage.getItem(DIAGNOSTICS_KEY) === '1'
+      const stored = localStorage.getItem(FILTER_KEY)
+      if (stored === 'quote' || stored === 'mark' || stored === 'all') this.filter = stored
+    } catch {
+      // Storage disabled: keep the defaults (diagnostics off, notes only).
+    }
+  }
+
+  /**
+   * Choose which kinds the list shows and remember it for this browser.
+   * @param filter - target view.
+   */
+  setFilter(filter: ListFilter): void {
+    this.filter = filter
+    try {
+      localStorage.setItem(FILTER_KEY, filter)
+    } catch {
+      // Same degradation as above: the view still changes for this document.
+    }
+    this.publish()
+  }
+
+  /**
+   * Replace the note on one annotation.
+   * @param id - annotation to edit.
+   * @param note - new note text; an empty string clears it.
+   */
+  setNote(id: string, note: string): void {
+    if (this.sessionId === undefined) return
+    this.annotations = this.annotations.map(annotation => annotation.id === id
+      ? { ...annotation, note }
+      : annotation)
+    writeStored(this.sessionId, this.annotations)
+    this.refresh()
+  }
+
+  /**
+   * Flip one annotation between a plain mark and an actionable note.
+   * @param id - annotation to convert.
+   */
+  toggleKind(id: string): void {
+    if (this.sessionId === undefined) return
+    this.annotations = this.annotations.map(annotation => annotation.id === id
+      ? { ...annotation, kind: annotation.kind === 'quote' ? 'mark' : 'quote' }
+      : annotation)
+    writeStored(this.sessionId, this.annotations)
+    this.refresh()
+  }
+
+  /**
+   * Flip the diagnostics display and remember it for this browser.
+   * @param on - target state; omitted toggles.
+   */
+  toggleDiagnostics(on?: boolean): void {
+    this.diagnostics = on ?? !this.diagnostics
+    try {
+      localStorage.setItem(DIAGNOSTICS_KEY, this.diagnostics ? '1' : '0')
+    } catch {
+      // Same degradation as above: the toggle still works for this document.
+    }
+    this.publish()
+  }
+
+  /**
+   * Show a transient line under the panel.
+   * @param text - message to display.
+   */
+  notify(text: string): void {
+    this.notice = text
+    this.publish()
+    window.clearTimeout(this.noticeTimer)
+    this.noticeTimer = window.setTimeout(() => {
+      this.notice = undefined
+      this.publish()
+    }, NOTICE_MS)
+  }
+
+  /**
+   * Push composed text into the composer without clobbering chips.
+   *
+   * An empty draft is replaced outright. A draft without reference chips is
+   * appended as plain text. A draft carrying chips goes through the revision
+   * guarded insert so the chips survive; a moved draft is retried once.
+   * @param text - text to append.
+   * @returns whether it landed.
+   */
+  insertText(text: string): InsertResult {
+    const { actions, draft, phase, occurrences } = this.input
+    if (actions === undefined) return 'failed'
+    if (phase !== 'plain') return 'busy'
+    if (draft.trim() === '') {
+      actions.setDraft(text)
+      return 'ok'
+    }
+    const separator = draft.endsWith('\n') ? '\n' : '\n\n'
+    if (occurrences === 0) {
+      actions.setDraft(`${draft}${separator}${text}`)
+      return 'ok'
+    }
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const span = actions.captureInsertion()
+      if (actions.insertText(`${separator}${text}`, span)) return 'ok'
+    }
+    return 'failed'
+  }
+
+  /** Rebuild the snapshot object and notify subscribers. */
+  private publish(): void {
+    this.snapshot = {
+      sessionId: this.sessionId,
+      annotations: this.annotations,
+      statuses: this.statuses,
+      panelOpen: this.panelOpen,
+      activeId: this.activeId,
+      notice: this.notice,
+      diagnostics: this.diagnostics,
+      filter: this.filter,
+      revision: this.snapshot.revision + 1,
+    }
+    for (const listener of this.listeners) listener()
+  }
+}

@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>DSH 标注 Demo — 锚点算法与 CSS Highlight</title>
+<style>
+  :root { color-scheme: light; --dsw-bg:#fafafa; --dsw-surface:#fff; --dsw-line:#e6e6e6;
+          --dsw-text:#1f2328; --dsw-muted:#6b7280; --dsw-accent:#2563eb; --dsw-warn:#b45309; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--dsw-bg); color:var(--dsw-text);
+         font: 15px/1.7 -apple-system, "PingFang SC", "Segoe UI", sans-serif; }
+  .app { display:grid; grid-template-columns: minmax(0,1fr) 340px; height:100vh; }
+  #chat { overflow-y:auto; padding:32px 40px 120px; }
+  .msg { max-width:760px; margin:0 auto 28px; background:var(--dsw-surface);
+         border:1px solid var(--dsw-line); border-radius:12px; padding:20px 24px; }
+  .markdown h2 { font-size:1.25em; margin:.8em 0 .5em; }
+  .markdown h3 { font-size:1.08em; margin:.9em 0 .4em; }
+  .markdown p { margin:.6em 0; }
+  .markdown ul { margin:.6em 0; padding-left:1.4em; }
+  .markdown li { margin:.25em 0; }
+  .markdown code { background:#f3f4f6; border-radius:4px; padding:.12em .35em; font-size:.9em;
+                   font-family:"SF Mono", Menlo, monospace; }
+  .markdown pre { background:#0f172a; color:#e2e8f0; border-radius:8px; padding:12px 14px;
+                  overflow-x:auto; font-size:.86em; }
+  .markdown pre code { background:none; color:inherit; padding:0; }
+  .markdown table { border-collapse:collapse; margin:.8em 0; font-size:.94em; width:100%; }
+  .markdown th, .markdown td { border:1px solid var(--dsw-line); padding:6px 10px; text-align:left; }
+  .markdown th { background:#f3f4f6; }
+  .markdown blockquote { margin:.8em 0; padding:.2em 0 .2em 1em; border-left:3px solid var(--dsw-line);
+                         color:var(--dsw-muted); }
+  .markdown a { color:var(--dsw-accent); }
+
+  /* 关键：高亮完全由 CSS Custom Highlight API 绘制，不动 DOM */
+  ::highlight(dsh-annotation) { background-color:#ffe066; color:#111; }
+  ::highlight(dsh-annotation-active) { background-color:#ff9f1a; color:#111; }
+
+  #panel { border-left:1px solid var(--dsw-line); background:var(--dsw-surface);
+           display:flex; flex-direction:column; overflow:hidden; }
+  #panel header { padding:14px 16px 10px; border-bottom:1px solid var(--dsw-line); }
+  #panel h1 { font-size:14px; margin:0 0 4px; }
+  #panel .sub { font-size:12px; color:var(--dsw-muted); }
+  #list { list-style:none; margin:0; padding:8px; overflow-y:auto; flex:1; }
+  #list li { border:1px solid var(--dsw-line); border-radius:8px; padding:8px 10px; margin-bottom:8px;
+             cursor:pointer; font-size:13px; }
+  #list li:hover { border-color:var(--dsw-accent); }
+  #list .quote { color:var(--dsw-text); background:#fff8cc; padding:0 2px; }
+  #list .note { color:var(--dsw-muted); margin-top:4px; white-space:pre-wrap; }
+  #list .meta { margin-top:6px; display:flex; gap:6px; align-items:center; font-size:11px; color:var(--dsw-muted); }
+  .badge { border-radius:999px; padding:1px 6px; font-size:10px; border:1px solid currentColor; }
+  .badge.exact { color:#047857; } .badge.fuzzy { color:#b45309; } .badge.lost { color:#b91c1c; }
+  #tools { padding:10px 12px; border-top:1px solid var(--dsw-line); display:grid; gap:6px; }
+  #tools button { font: inherit; font-size:12px; padding:6px 8px; border-radius:6px; cursor:pointer;
+                  border:1px solid var(--dsw-line); background:#f9fafb; text-align:left; }
+  #tools button:hover { border-color:var(--dsw-accent); }
+  #stats { padding:10px 12px 14px; border-top:1px solid var(--dsw-line); font-size:11.5px;
+           color:var(--dsw-muted); white-space:pre-wrap; font-family:"SF Mono", Menlo, monospace; }
+
+  #menu, #composer { position:fixed; z-index:1000; background:#fff; border:1px solid #d1d5db;
+                     border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,.16); }
+  #menu { padding:4px; display:none; min-width:120px; }
+  #menu button { display:block; width:100%; text-align:left; font:inherit; font-size:13px;
+                 padding:6px 10px; border:0; background:none; border-radius:5px; cursor:pointer; }
+  #menu button:hover { background:#eff6ff; }
+  #composer { padding:10px; display:none; width:300px; }
+  #composer textarea { width:100%; height:64px; resize:vertical; font:inherit; font-size:13px;
+                       border:1px solid var(--dsw-line); border-radius:6px; padding:6px; }
+  #composer .row { display:flex; gap:6px; justify-content:flex-end; margin-top:8px; }
+  #composer button { font:inherit; font-size:12px; padding:5px 10px; border-radius:6px; cursor:pointer;
+                     border:1px solid var(--dsw-line); background:#f9fafb; }
+  #composer button.primary { background:var(--dsw-accent); color:#fff; border-color:var(--dsw-accent); }
+  .hint { position:fixed; left:50%; transform:translateX(-50%); bottom:18px; font-size:12px;
+          color:#fff; background:#111827; padding:6px 14px; border-radius:999px; opacity:.9; }
+</style>
+</head>
+<body>
+<div class="app">
+  <main id="chat"></main>
+  <aside id="panel">
+    <header>
+      <h1>标注面板</h1>
+      <div class="sub">选中文字 → 右键「标注」；高亮用 CSS Highlight API 绘制</div>
+    </header>
+    <ul id="list"></ul>
+    <div id="tools">
+      <button id="btn-rerender">模拟重新渲染（DOM 全量重建）</button>
+      <button id="btn-shift">模拟前文被改写（偏移失效）</button>
+      <button id="btn-shift-all">最坏情况：两条都改写（全部走引文兜底）</button>
+      <button id="btn-stream">模拟流式追加（3 秒）</button>
+      <button id="btn-perf">性能测试：300 条锚点全量重定位</button>
+      <button id="btn-clear">清空全部标注</button>
+    </div>
+    <div id="stats"></div>
+  </aside>
+</div>
+<div id="menu">
+  <button data-act="annotate">标注</button>
+  <button data-act="copy">复制</button>
+  <button data-act="cancel">取消</button>
+</div>
+<div id="composer">
+  <textarea placeholder="写点注释（可留空）"></textarea>
+  <div class="row">
+    <button data-act="composer-cancel">取消</button>
+    <button class="primary" data-act="composer-save">保存标注</button>
+  </div>
+</div>
+<div class="hint" id="hint">用鼠标选中右侧回答里的任意文字，然后右键</div>
+
+<script>
+'use strict'
+
+/* ────────────────────────── 演示内容（模拟 DSH 渲染出的 DOM 结构） ────────────────────────── */
+
+const MESSAGES = [
+  {
+    nodeKey: 'assistant-step:1:1',
+    html: `
+      <h2>渲染链路</h2>
+      <p>你的答案到达浏览器时是一段 <strong>Markdown 源文本</strong>，不是 HTML。DSH 用自研的
+      <code>micromark → mdast → React</code> 流水线把它渲染出来，其中 <strong>流式阶段只重解析尾部两个块</strong>，
+      前面的块被冻结成缓存的 React 元素。</p>
+      <p>这套设计带来一个副作用：<em>渲染后的纯文本</em>和<em>源文本</em>并不是一回事。
+      <code>**加粗**</code> 的星号、<code>[文字](链接)</code> 里的 URL、表格的竖线都不会出现在 DOM 里。</p>
+      <h3>安全与细节</h3>
+      <ul>
+        <li>不产出 raw HTML：HTML 源码按字面文本渲染</li>
+        <li>协议白名单：仅 <code>http:</code>、<code>https:</code>、<code>mailto:</code> 放行</li>
+        <li>代码块用 shiki 高亮，流式时对代码围栏增量分词</li>
+      </ul>
+      <pre><code>const ctx = CSS.highlights
+ctx.set('dsh-annotation', new Highlight(...ranges))</code></pre>
+      <table>
+        <thead><tr><th>阶段</th><th>语法</th></tr></thead>
+        <tbody>
+          <tr><td>流式中</td><td>GFM，不解析数学</td></tr>
+          <tr><td>最终态</td><td>GFM + TeX</td></tr>
+        </tbody>
+      </table>
+      <blockquote>标注必须锚定在「渲染后的纯文本」上，这是偏移量能对得上的前提。</blockquote>
+    `,
+  },
+  {
+    nodeKey: 'assistant-step:1:2',
+    html: `
+      <h2>锚点策略</h2>
+      <p>每条标注存成 <strong>节点键 + 字符偏移 + 引文 + 前后文</strong> 四件套。偏移命中就不必模糊搜索，
+      偏移失效时再用前后文给候选打分，选出最像的那一处。这样即使前文被改写，标注也不会飘走。</p>
+      <p>流式期间文本只追加，偏移天然稳定；真正需要重定位的时机只有三种：DOM 重建、前文改写、折叠区展开。</p>
+    `,
+  },
+]
+
+/* ────────────────────────── 文本模型与偏移换算 ────────────────────────── */
+
+/** 收集子树内全部文本节点，拼成一条纯文本并记录每段的起止偏移。 */
+function buildTextModel(root) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+  const segments = []
+  let text = ''
+  for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
+    const start = text.length
+    text += node.nodeValue
+    segments.push({ node, start, end: text.length })
+  }
+  return { text, segments }
+}
+
+/** 纯文本偏移 → DOM 插入点。 */
+function pointAt(model, offset) {
+  const clamped = Math.max(0, Math.min(offset, model.text.length))
+  for (const seg of model.segments) {
+    if (clamped < seg.end) return { node: seg.node, offset: clamped - seg.start }
+  }
+  const last = model.segments[model.segments.length - 1]
+  return { node: last.node, offset: last.node.nodeValue.length }
+}
+
+/** 纯文本区间 → 可绘制的 Range。 */
+function rangeOf(model, start, end) {
+  const from = pointAt(model, start)
+  const to = pointAt(model, end)
+  const range = document.createRange()
+  range.setStart(from.node, from.offset)
+  range.setEnd(to.node, to.offset)
+  return range
+}
+
+/** 当前选区在所属消息内的字符偏移（与 buildTextModel 口径一致）。 */
+function selectionOffsets(message, range) {
+  const probe = document.createRange()
+  probe.selectNodeContents(message)
+  probe.setEnd(range.startContainer, range.startOffset)
+  const start = probe.toString().length
+  return { start, end: start + range.toString().length }
+}
+
+function closestMessage(node) {
+  const el = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement
+  return el === null ? null : el.closest('[data-chat-node-key]')
+}
+
+function commonPrefixLength(a, b) {
+  let i = 0
+  while (i < a.length && i < b.length && a[i] === b[i]) i++
+  return i
+}
+
+function commonSuffixLength(a, b) {
+  let i = 0
+  while (i < a.length && i < b.length && a[a.length - 1 - i] === b[b.length - 1 - i]) i++
+  return i
+}
+
+/* ────────────────────────── 锚点解析 ────────────────────────── */
+
+const CONTEXT_CHARS = 32
+
+/**
+ * 解析一条锚点。
+ * @returns {{status:'exact'|'fuzzy'|'lost'|'missing', range?:Range, score?:number, candidates?:number}}
+ */
+function resolveAnchor(anchor, cache) {
+  const message = document.querySelector(`#chat [data-chat-node-key="${CSS.escape(anchor.nodeKey)}"]`)
+  if (message === null) return { status: 'missing' }
+  // 一次重定位里同一条消息只遍历一次文本节点；否则 N 条锚点就是 N 次树遍历。
+  let model = cache?.get(anchor.nodeKey)
+  if (model === undefined) {
+    model = buildTextModel(message)
+    cache?.set(anchor.nodeKey, model)
+  }
+
+  // 1) 偏移直命中：绝大多数情况走这里，一次 slice 比较。
+  if (model.text.slice(anchor.start, anchor.start + anchor.quote.length) === anchor.quote) {
+    return { status: 'exact', range: rangeOf(model, anchor.start, anchor.start + anchor.quote.length) }
+  }
+
+  // 2) 偏移失效：按引文找所有候选，用前后文给它们打分。
+  let best = -1
+  let bestScore = -1
+  let candidates = 0
+  for (let at = model.text.indexOf(anchor.quote); at !== -1; at = model.text.indexOf(anchor.quote, at + 1)) {
+    candidates++
+    const before = model.text.slice(Math.max(0, at - anchor.prefix.length), at)
+    const after = model.text.slice(at + anchor.quote.length, at + anchor.quote.length + anchor.suffix.length)
+    const score = commonSuffixLength(anchor.prefix, before) + commonPrefixLength(anchor.suffix, after)
+    if (score > bestScore) { bestScore = score; best = at }
+  }
+  const maxScore = anchor.prefix.length + anchor.suffix.length
+  if (best !== -1 && (candidates === 1 || bestScore >= Math.min(6, maxScore))) {
+    return { status: 'fuzzy', score: bestScore, candidates,
+             range: rangeOf(model, best, best + anchor.quote.length) }
+  }
+  return { status: 'lost', candidates }
+}
+
+/* ────────────────────────── 状态与持久化 ────────────────────────── */
+
+const STORE_KEY = 'dsh-annotation-demo/v1'
+let annotations = load()
+let activeId = null
+let pendingRange = null
+let lastStats = null
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY)
+    return raw === null ? [] : JSON.parse(raw)
+  } catch {
+    return [] // 存储不可用或内容损坏时按空集启动，不阻断页面。
+  }
+}
+
+function persist() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(annotations)) }
+  catch { /* 配额或隐私模式下静默降级为本次会话内有效 */ }
+}
+
+/* ────────────────────────── 高亮绘制 ────────────────────────── */
+
+function refreshHighlights() {
+  const t0 = performance.now()
+  const registry = (typeof CSS !== 'undefined' && CSS.highlights) ? CSS.highlights : null
+  if (registry !== null) {
+    registry.delete('dsh-annotation')
+    registry.delete('dsh-annotation-active')
+  }
+
+  const ranges = []
+  const counts = { exact: 0, fuzzy: 0, lost: 0, missing: 0 }
+  let activeRange = null
+  const cache = new Map()
+  for (const anchor of annotations) {
+    const result = resolveAnchor(anchor, cache)
+    anchor.status = result.status
+    counts[result.status] = (counts[result.status] ?? 0) + 1
+    if (result.range !== undefined) {
+      ranges.push(result.range)
+      if (anchor.id === activeId) activeRange = result.range
+    }
+  }
+
+  if (registry !== null) {
+    if (ranges.length > 0) registry.set('dsh-annotation', new Highlight(...ranges))
+    if (activeRange !== null) registry.set('dsh-annotation-active', new Highlight(activeRange))
+  }
+
+  lastStats = {
+    elapsed: performance.now() - t0,
+    ranges: ranges.length,
+    counts,
+    chars: document.querySelectorAll('#chat [data-chat-node-key]').length,
+  }
+  renderList()
+  renderStats()
+}
+
+function renderStats() {
+  if (lastStats === null) return
+  const { elapsed, ranges, counts } = lastStats
+  const per = annotations.length === 0 ? '0' : (elapsed / annotations.length * 1000).toFixed(1)
+  document.getElementById('stats').textContent =
+    `标注数        ${annotations.length}\n` +
+    `已定位        ${ranges}（精确 ${counts.exact} / 引文兜底 ${counts.fuzzy} / 丢失 ${counts.lost}）\n` +
+    `本次重定位    ${elapsed.toFixed(2)} ms\n` +
+    `单条均摊      ${per} µs`
+}
+
+function renderList() {
+  const list = document.getElementById('list')
+  list.replaceChildren()
+  if (annotations.length === 0) {
+    const empty = document.createElement('li')
+    empty.style.cssText = 'cursor:default;color:#9ca3af;border-style:dashed'
+    empty.textContent = '还没有标注。选中文字后右键试试。'
+    list.append(empty)
+    return
+  }
+  for (const anchor of annotations) {
+    const item = document.createElement('li')
+    item.dataset.id = anchor.id
+
+    const quote = document.createElement('div')
+    quote.className = 'quote'
+    quote.textContent = anchor.quote.length > 60 ? `${anchor.quote.slice(0, 60)}…` : anchor.quote
+    item.append(quote)
+
+    if (anchor.note !== '') {
+      const note = document.createElement('div')
+      note.className = 'note'
+      note.textContent = anchor.note
+      item.append(note)
+    }
+
+    const meta = document.createElement('div')
+    meta.className = 'meta'
+    const badge = document.createElement('span')
+    badge.className = `badge ${anchor.status ?? 'exact'}`
+    badge.textContent = anchor.status ?? 'exact'
+    meta.append(badge)
+    meta.append(document.createTextNode(`@${anchor.start}`))
+    const remove = document.createElement('button')
+    remove.textContent = '删除'
+    remove.style.cssText = 'margin-left:auto;font-size:11px;cursor:pointer;background:none;border:0;color:#b91c1c'
+    remove.addEventListener('click', event => {
+      event.stopPropagation()
+      annotations = annotations.filter(candidate => candidate.id !== anchor.id)
+      if (activeId === anchor.id) activeId = null
+      persist()
+      refreshHighlights()
+    })
+    meta.append(remove)
+    item.append(meta)
+
+    item.addEventListener('click', () => {
+      activeId = anchor.id
+      refreshHighlights()
+      const result = resolveAnchor(anchor)
+      const target = result.range
+      if (target !== undefined) {
+        const rect = target.getBoundingClientRect()
+        document.getElementById('chat').scrollTo({
+          top: document.getElementById('chat').scrollTop + rect.top - 200,
+          behavior: 'smooth',
+        })
+      }
+    })
+    list.append(item)
+  }
+}
+
+/* ────────────────────────── 建立标注 ────────────────────────── */
+
+function anchorFromRange(range, note) {
+  const message = closestMessage(range.startContainer)
+  if (message === null) return null
+  const endMessage = closestMessage(range.endContainer)
+  if (endMessage !== message) return { error: 'cross' } // 跨消息的选区不做拆分，直接拒绝。
+
+  const model = buildTextModel(message)
+  const { start, end } = selectionOffsets(message, range)
+  if (end <= start) return null
+
+  return {
+    id: `a${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    nodeKey: message.dataset.chatNodeKey,
+    start,
+    end,
+    quote: model.text.slice(start, end),
+    prefix: model.text.slice(Math.max(0, start - CONTEXT_CHARS), start),
+    suffix: model.text.slice(end, end + CONTEXT_CHARS),
+    note,
+    createdAt: new Date().toISOString(),
+  }
+}
+
+/* ────────────────────────── 右键菜单与注释框 ────────────────────────── */
+
+const menu = document.getElementById('menu')
+const composer = document.getElementById('composer')
+
+function hideMenu() { menu.style.display = 'none' }
+
+document.addEventListener('contextmenu', event => {
+  const selection = window.getSelection()
+  if (selection === null || selection.isCollapsed || selection.rangeCount === 0) return
+  const message = closestMessage(selection.getRangeAt(0).startContainer)
+  if (message === null) return
+  event.preventDefault()
+  pendingRange = selection.getRangeAt(0).cloneRange()
+  menu.style.left = `${Math.min(event.clientX, window.innerWidth - 140)}px`
+  menu.style.top = `${Math.min(event.clientY, window.innerHeight - 110)}px`
+  menu.style.display = 'block'
+})
+
+document.addEventListener('mousedown', event => {
+  if (!menu.contains(event.target)) hideMenu()
+  if (!composer.contains(event.target)) composer.style.display = 'none'
+}, true)
+
+menu.addEventListener('click', event => {
+  const action = event.target.dataset.act
+  if (action === 'annotate' && pendingRange !== null) {
+    const rect = pendingRange.getBoundingClientRect()
+    composer.style.left = `${Math.min(rect.left, window.innerWidth - 320)}px`
+    composer.style.top = `${Math.min(rect.bottom + 8, window.innerHeight - 150)}px`
+    composer.style.display = 'block'
+    composer.querySelector('textarea').value = ''
+    composer.querySelector('textarea').focus()
+  }
+  if (action === 'copy' && pendingRange !== null) {
+    navigator.clipboard?.writeText(pendingRange.toString()).catch(() => {})
+  }
+  hideMenu()
+})
+
+composer.addEventListener('click', event => {
+  const action = event.target.dataset.act
+  if (action === 'composer-cancel') { composer.style.display = 'none'; pendingRange = null; return }
+  if (action === 'composer-save' && pendingRange !== null) {
+    const note = composer.querySelector('textarea').value.trim()
+    const anchor = anchorFromRange(pendingRange, note)
+    composer.style.display = 'none'
+    pendingRange = null
+    window.getSelection()?.removeAllRanges()
+    if (anchor === null) return
+    if (anchor.error === 'cross') { flashHint('跨消息的选区暂不支持，请在同一条回答内选择'); return }
+    annotations.push(anchor)
+    activeId = anchor.id
+    persist()
+    refreshHighlights()
+    flashHint('已标注。刷新页面后依然存在。')
+  }
+})
+
+let hintTimer = 0
+function flashHint(text) {
+  const hint = document.getElementById('hint')
+  hint.textContent = text
+  hint.style.opacity = '1'
+  clearTimeout(hintTimer)
+  hintTimer = setTimeout(() => { hint.style.opacity = '0' }, 2600)
+}
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') { hideMenu(); composer.style.display = 'none'; pendingRange = null }
+})
+
+/* ────────────────────────── 渲染与重定位时机 ────────────────────────── */
+
+function renderChat() {
+  const chat = document.getElementById('chat')
+  const fragment = document.createDocumentFragment()
+  for (const message of MESSAGES) {
+    const wrapper = document.createElement('div')
+    wrapper.className = 'msg'
+    wrapper.dataset.chatNodeKey = message.nodeKey
+    const body = document.createElement('div')
+    body.className = 'markdown'
+    body.innerHTML = message.html
+    wrapper.append(body)
+    fragment.append(wrapper)
+  }
+  chat.replaceChildren(fragment)
+}
+
+let scheduled = 0
+function scheduleRefresh() {
+  if (scheduled !== 0) return
+  scheduled = requestAnimationFrame(() => {
+    scheduled = 0
+    refreshHighlights()
+  })
+}
+
+/* DOM 变化（流式追加、重渲染）后统一重定位；合并到一帧，避免每个 chunk 都算一遍。 */
+new MutationObserver(() => scheduleRefresh()).observe(document.getElementById('chat'), {
+  subtree: true, childList: true, characterData: true,
+})
+
+/* ────────────────────────── 面板按钮 ────────────────────────── */
+
+document.getElementById('btn-rerender').addEventListener('click', () => {
+  renderChat() // 全新 DOM，偏移不变 → 应全部走 exact
+})
+
+document.getElementById('btn-shift').addEventListener('click', () => {
+  const target = document.querySelector('[data-chat-node-key="assistant-step:1:1"] .markdown h2')
+  if (target !== null && !target.dataset.shifted) {
+    target.dataset.shifted = '1'
+    target.textContent = '补充一句：渲染链路（前文被改写了）'
+  } else if (target !== null) {
+    target.textContent = '渲染链路'
+    delete target.dataset.shifted
+  }
+})
+
+document.getElementById('btn-shift-all').addEventListener('click', () => {
+  for (const body of document.querySelectorAll('.markdown')) {
+    const lead = document.createElement('p')
+    lead.textContent = '【补充说明】这一段是为了演示而临时插到回答最前面的文字，它会让后续所有字符的偏移整体后移。'
+    body.prepend(lead)
+  }
+})
+
+document.getElementById('btn-stream').addEventListener('click', async () => {
+  const body = document.querySelector('[data-chat-node-key="assistant-step:1:2"] .markdown')
+  if (body === null) return
+  const paragraph = document.createElement('p')
+  body.append(paragraph)
+  const source = '流式追加模拟：这一段文字逐个字符地长出来，锚点在这个过程中应当始终稳定，不会跳到别处。'
+  let maxFrame = 0
+  for (const char of source) {
+    await new Promise(resolve => requestAnimationFrame(resolve))
+    const t0 = performance.now()
+    paragraph.textContent += char
+    maxFrame = Math.max(maxFrame, performance.now() - t0)
+  }
+  flashHint(`流式追加完成，单帧最长 ${maxFrame.toFixed(2)} ms`)
+})
+
+document.getElementById('btn-perf').addEventListener('click', () => {
+  const scratch = []
+  const messages = [...document.querySelectorAll('#chat [data-chat-node-key]')]
+  let created = 0
+  while (created < 300 && messages.length > 0) {
+    const message = messages[created % messages.length]
+    const model = buildTextModel(message)
+    const start = Math.floor(Math.random() * Math.max(1, model.text.length - 14))
+    const quote = model.text.slice(start, start + 8)
+    if (quote.trim().length < 4) continue
+    scratch.push({
+      id: `perf${created}`, nodeKey: message.dataset.chatNodeKey, start, end: start + quote.length,
+      quote, prefix: model.text.slice(Math.max(0, start - CONTEXT_CHARS), start),
+      suffix: model.text.slice(start + quote.length, start + quote.length + CONTEXT_CHARS),
+      note: '', createdAt: new Date().toISOString(),
+    })
+    created++
+  }
+  const measure = () => {
+    const t0 = performance.now()
+    let hit = 0
+    const cache = new Map()
+    for (const anchor of scratch) if (resolveAnchor(anchor, cache).range !== undefined) hit++
+    return { elapsed: performance.now() - t0, hit }
+  }
+  const fast = measure()
+
+  // 再测最坏情况：给两条消息前面各插一段文字，让所有偏移整体失效。
+  const leads = []
+  for (const body of document.querySelectorAll('.markdown')) {
+    const lead = document.createElement('p')
+    lead.textContent = '【临时前缀】为了让所有锚点的偏移同时失效而插入的一段文字。'
+    body.prepend(lead)
+    leads.push(lead)
+  }
+  const slow = measure()
+  for (const lead of leads) lead.remove()
+
+  flashHint(`300 条：偏移命中 ${fast.elapsed.toFixed(2)} ms；偏移全失效走引文兜底 ${slow.elapsed.toFixed(2)} ms（各命中 ${fast.hit}/${slow.hit} 条）`)
+})
+
+document.getElementById('btn-clear').addEventListener('click', () => {
+  annotations = []
+  activeId = null
+  persist()
+  refreshHighlights()
+})
+
+/* ────────────────────────── 启动 ────────────────────────── */
+
+renderChat()
+refreshHighlights()
+
+/* 供自动化测试驱动的最小接口，不影响手工使用。 */
+window.__demo = {
+  get annotations() { return annotations },
+  addAt(nodeKey, start, length, note) {
+    const message = document.querySelector(`#chat [data-chat-node-key="${CSS.escape(nodeKey)}"]`)
+    const model = buildTextModel(message)
+    const quote = model.text.slice(start, start + length)
+    annotations.push({
+      id: `auto${annotations.length}`, nodeKey, start, end: start + length, quote,
+      prefix: model.text.slice(Math.max(0, start - CONTEXT_CHARS), start),
+      suffix: model.text.slice(start + length, start + length + CONTEXT_CHARS),
+      note, createdAt: new Date().toISOString(),
+    })
+    persist()
+    refreshHighlights()
+    return quote
+  },
+  refresh: refreshHighlights,
+  rerender: renderChat,
+  shift: () => document.getElementById('btn-shift').click(),
+  stats: () => lastStats,
+  highlightCount: () => (CSS.highlights.has('dsh-annotation')
+    ? [...CSS.highlights.get('dsh-annotation')].length : 0),
+}
+</script>
+</body>
+</html>

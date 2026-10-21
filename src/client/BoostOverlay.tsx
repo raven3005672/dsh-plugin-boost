@@ -1,0 +1,314 @@
+/**
+ * The overlay-layer half of boost: selection menu, note composer, toast, and
+ * the panel itself.
+ *
+ * Everything here renders as a direct child of the shell's click-through
+ * overlay layer, so each element re-enables pointer events for itself and
+ * nothing else. The document listeners that start an annotation live in this
+ * component's effect, not at module scope.
+ */
+import { useEffect, useRef, useState } from 'react'
+import { describeSelection, owningMessage } from './anchor.ts'
+import { AnnotationPanel } from './AnnotationPanel.tsx'
+import type { DraftSelection } from './contract.ts'
+import type { BoostTranslate } from './locales.ts'
+import type { BoostStore } from './store.ts'
+import { supported } from './highlights.ts'
+import { useBoost } from './useBoost.ts'
+
+/** Elements that delimit a selectable block; a range may not cross two. */
+const BLOCK_SELECTOR = 'p,li,h1,h2,h3,h4,h5,h6,td,th,pre,blockquote,figcaption'
+
+/** Props for the overlay half. */
+export interface BoostOverlayProps {
+  /** Plugin store. */
+  readonly store: BoostStore
+  /** Localized copy. */
+  readonly t: BoostTranslate
+}
+
+/** Where the context menu sits and what it captured. */
+interface MenuState {
+  /** Viewport x of the pointer. */
+  readonly x: number
+  /** Viewport y of the pointer. */
+  readonly y: number
+  /** Message node key the selection belongs to. */
+  readonly nodeKey: string
+  /** Rendered seat the selection belongs to. */
+  readonly flowKey: string
+  /** Captured selection. */
+  readonly draft: DraftSelection
+  /** Existing annotation the selection falls inside, when any. */
+  readonly overlapId: string | undefined
+}
+
+/** Where the note composer sits and what it will save. */
+interface ComposerState extends MenuState {
+  /** Viewport x of the selection's left edge. */
+  readonly left: number
+  /** Viewport y of the selection's bottom edge. */
+  readonly bottom: number
+}
+
+/**
+ * Find the block element that owns a selection endpoint.
+ * @param node - endpoint node.
+ * @returns the closest block, or null.
+ */
+function blockOf(node: Node): Element | null {
+  const element = node.nodeType === Node.ELEMENT_NODE ? node as Element : node.parentElement
+  return element === null ? null : element.closest(BLOCK_SELECTOR)
+}
+
+/**
+ * Whether a mutation happened inside this plugin's own chrome.
+ * @param target - mutation target.
+ * @returns true when the node belongs to an element stamped `data-dsh-boost`.
+ */
+function isOwn(target: Node): boolean {
+  const element = target.nodeType === Node.ELEMENT_NODE ? target as Element : target.parentElement
+  return element !== null && element.closest('[data-dsh-boost]') !== null
+}
+
+/**
+ * Render the overlay surfaces and wire their document listeners.
+ * @param props - store and copy.
+ * @returns the panel plus any open menu, composer or toast.
+ */
+export function BoostOverlay({ store, t }: BoostOverlayProps) {
+  const snapshot = useBoost(store)
+  const [menu, setMenu] = useState<MenuState | null>(null)
+  const [composer, setComposer] = useState<ComposerState | null>(null)
+  const [note, setNote] = useState('')
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null)
+
+  useEffect(() => {
+    if (composer !== null) textareaRef.current?.focus()
+  }, [composer])
+
+  useEffect(() => {
+    /**
+     * Open the menu when a text selection inside one message block is
+     * right-clicked; leave every other context menu alone.
+     * @param event - the DOM contextmenu event.
+     */
+    const onContextMenu = (event: MouseEvent): void => {
+      const selection = window.getSelection()
+      if (selection === null || selection.isCollapsed || selection.rangeCount === 0) return
+      const range = selection.getRangeAt(0)
+      const message = owningMessage(range.startContainer)
+      if (message === null) return
+      // Annotations belong to what the assistant said. On a user message the
+      // handler steps aside and the browser's own menu stays available.
+      if (message.getAttribute('data-chat-flow-kind') !== 'assistant-step') return
+      event.preventDefault()
+      const endMessage = owningMessage(range.endContainer)
+      if (endMessage !== message || blockOf(range.startContainer) !== blockOf(range.endContainer)) {
+        store.notify(t('notice.crossBlock'))
+        return
+      }
+      const draft = describeSelection(message, range)
+      if (draft === undefined) return
+      const flowKey = message.getAttribute('data-chat-flow-key') ?? ''
+      setMenu({
+        x: Math.min(event.clientX, window.innerWidth - 150),
+        y: Math.min(event.clientY, window.innerHeight - 120),
+        nodeKey: message.getAttribute('data-chat-node-key') ?? '',
+        flowKey,
+        draft,
+        overlapId: store.findOverlapping(flowKey, draft.start, draft.end)?.id,
+      })
+    }
+
+    /** Close transient surfaces on an outside press. */
+    const onPointerDown = (event: MouseEvent): void => {
+      const target = event.target
+      if (!(target instanceof Element)) return
+      if (target.closest('[data-dsh-boost]') === null) {
+        setMenu(null)
+        setComposer(null)
+      }
+    }
+
+    /** Escape closes whatever is open. */
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape') return
+      setMenu(null)
+      setComposer(null)
+    }
+
+    document.addEventListener('contextmenu', onContextMenu)
+    document.addEventListener('mousedown', onPointerDown, true)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('contextmenu', onContextMenu)
+      document.removeEventListener('mousedown', onPointerDown, true)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [store, t])
+
+  useEffect(() => {
+    if (!supported()) store.notify(t('notice.unsupported'))
+  }, [store, t])
+
+  useEffect(() => {
+    let scheduled = 0
+    const observer = new MutationObserver(mutations => {
+      if (mutations.every(mutation => isOwn(mutation.target))) return
+      if (scheduled !== 0) return
+      scheduled = requestAnimationFrame(() => {
+        scheduled = 0
+        store.refresh()
+      })
+    })
+    observer.observe(document.body, { subtree: true, childList: true, characterData: true })
+    return () => {
+      observer.disconnect()
+      if (scheduled !== 0) cancelAnimationFrame(scheduled)
+    }
+  }, [store])
+
+  /**
+   * Save the pending selection as an annotation.
+   */
+  const saveAnnotation = (): void => {
+    if (composer === null) return
+    store.add({
+      id: crypto.randomUUID(),
+      sessionId: snapshot.sessionId ?? '',
+      kind: 'quote',
+      nodeKey: composer.nodeKey,
+      flowKey: composer.flowKey,
+      start: composer.draft.start,
+      end: composer.draft.end,
+      quote: composer.draft.quote,
+      prefix: composer.draft.prefix,
+      suffix: composer.draft.suffix,
+      note,
+      createdAt: new Date().toISOString(),
+    })
+    setComposer(null)
+    setNote('')
+    store.notify(t('notice.saved'))
+  }
+
+  return (
+    <>
+      <AnnotationPanel store={store} t={t} />
+
+      {menu !== null && (
+        <div className="dsh-boost-menu" data-dsh-boost="" style={{ left: menu.x, top: menu.y }}>
+          {menu.overlapId === undefined
+            ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    store.add({
+                      id: crypto.randomUUID(),
+                      sessionId: snapshot.sessionId ?? '',
+                      kind: 'mark',
+                      nodeKey: menu.nodeKey,
+                      flowKey: menu.flowKey,
+                      start: menu.draft.start,
+                      end: menu.draft.end,
+                      quote: menu.draft.quote,
+                      prefix: menu.draft.prefix,
+                      suffix: menu.draft.suffix,
+                      note: '',
+                      createdAt: new Date().toISOString(),
+                    })
+                    window.getSelection()?.removeAllRanges()
+                    setMenu(null)
+                    store.notify(t('notice.saved'))
+                  }}
+                >
+                  {t('menu.mark')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setComposer({ ...menu, left: menu.x, bottom: menu.y })
+                    setNote('')
+                    setMenu(null)
+                  }}
+                >
+                  {t('menu.annotate')}
+                </button>
+              </>
+            )
+            : (
+              <button
+                type="button"
+                onClick={() => {
+                  store.remove(menu.overlapId ?? '')
+                  store.notify(t('notice.unannotated'))
+                  window.getSelection()?.removeAllRanges()
+                  setMenu(null)
+                }}
+              >
+                {t('menu.unannotate')}
+              </button>
+            )}
+          <button
+            type="button"
+            onClick={() => {
+              void navigator.clipboard?.writeText(menu.draft.quote).then(
+                () => { store.notify(t('notice.copied')) },
+                () => { /* Clipboard refused; nothing to report beyond the copy itself. */ },
+              )
+              setMenu(null)
+            }}
+          >
+            {t('menu.copy')}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              window.getSelection()?.removeAllRanges()
+              setMenu(null)
+            }}
+          >
+            {t('menu.cancel')}
+          </button>
+        </div>
+      )}
+
+      {composer !== null && (
+        <div
+          className="dsh-boost-composer"
+          data-dsh-boost=""
+          style={{
+            left: Math.min(composer.left, window.innerWidth - 320),
+            top: Math.min(composer.bottom + 8, window.innerHeight - 160),
+          }}
+        >
+          <textarea
+            ref={textareaRef}
+            value={note}
+            placeholder={t('composer.placeholder')}
+            onChange={event => { setNote(event.target.value) }}
+          />
+          <div className="dsh-boost-composer-row">
+            <button
+              type="button"
+              onClick={() => {
+                window.getSelection()?.removeAllRanges()
+                setComposer(null)
+                setNote('')
+              }}
+            >
+              {t('composer.cancel')}
+            </button>
+            <button type="button" data-primary="true" onClick={saveAnnotation}>{t('composer.save')}</button>
+          </div>
+        </div>
+      )}
+
+      {snapshot.notice !== undefined && (
+        <div className="dsh-boost-toast" data-dsh-boost="">{snapshot.notice}</div>
+      )}
+    </>
+  )
+}

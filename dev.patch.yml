@@ -1,0 +1,6 @@
+# Local development overlay: mount this checkout straight into a source run.
+# From the deepseek-harness checkout:
+#   pnpm dsh web --patch ../dsh-plugin-boost/dev.patch.yml
+- insert:
+    - id: dsh-plugin-boost
+      name: /Users/yanglin/github/dsh-plugin-boost/lib/index.js
