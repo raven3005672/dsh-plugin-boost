@@ -88,7 +88,7 @@ html[data-dsh-boost-shift] [class*='widthHandle'] {
   position: fixed;
   top: 84px;
   right: 12px;
-  width: 240px;
+  width: 260px;
   display: flex;
   flex-direction: column;
   border: 1px solid var(--dsw-alias-border-l2, #e5e7eb);

@@ -52,7 +52,7 @@ function PencilIcon(): React.ReactElement {
 }
 
 /** Card width, mirrored in the stylesheet; the transcript gives up width + 24. */
-const PANEL_WIDTH = 240
+const PANEL_WIDTH = 260
 
 /** Disclosure chevron shared by the two trigger buttons. */
 function Chevron(): React.ReactElement {
