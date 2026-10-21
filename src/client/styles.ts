@@ -481,17 +481,4 @@ body[data-ds-dark-theme] .dsh-boost-more:hover {
   filter: brightness(1.05);
 }
 
-.dsh-boost-toast {
-  position: fixed;
-  left: 50%;
-  top: 76px;
-  transform: translateX(-50%);
-  padding: 6px 14px;
-  border-radius: 999px;
-  background: rgba(17, 24, 39, 0.92);
-  color: #ffffff;
-  font-size: 12px;
-  z-index: 50;
-  pointer-events: none;
-}
 `

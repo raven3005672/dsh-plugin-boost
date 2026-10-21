@@ -1,6 +1,6 @@
 /**
- * The overlay-layer half of boost: selection menu, note composer, toast, and
- * the panel itself.
+ * The overlay-layer half of boost: selection menu, note composer, and the
+ * panel itself.
  *
  * Everything here renders as a direct child of the shell's click-through
  * overlay layer, so each element re-enables pointer events for itself and
@@ -76,7 +76,7 @@ function isOwn(target: Node): boolean {
 /**
  * Render the overlay surfaces and wire their document listeners.
  * @param props - store and copy.
- * @returns the panel plus any open menu, composer or toast.
+ * @returns the panel plus any open menu or composer.
  */
 export function BoostOverlay({ store, t }: BoostOverlayProps) {
   const snapshot = useBoost(store)
@@ -107,7 +107,6 @@ export function BoostOverlay({ store, t }: BoostOverlayProps) {
       event.preventDefault()
       const endMessage = owningMessage(range.endContainer)
       if (endMessage !== message || blockOf(range.startContainer) !== blockOf(range.endContainer)) {
-        store.notify(t('notice.crossBlock'))
         return
       }
       const draft = describeSelection(message, range)
@@ -151,7 +150,7 @@ export function BoostOverlay({ store, t }: BoostOverlayProps) {
   }, [store, t])
 
   useEffect(() => {
-    if (!supported()) store.notify(t('notice.unsupported'))
+    if (!supported()) console.warn('dsh-plugin-boost: CSS Custom Highlight API unavailable')
   }, [store, t])
 
   useEffect(() => {
@@ -194,15 +193,11 @@ export function BoostOverlay({ store, t }: BoostOverlayProps) {
     if (opened === null) return
     if (id === 'unannotate') {
       store.remove(opened.overlapId ?? '')
-      store.notify(t('notice.unannotated'))
       window.getSelection()?.removeAllRanges()
       return
     }
     if (id === 'copy') {
-      void navigator.clipboard?.writeText(opened.draft.quote).then(
-        () => { store.notify(t('notice.copied')) },
-        () => { /* Clipboard refused; nothing to report beyond the copy itself. */ },
-      )
+      void navigator.clipboard?.writeText(opened.draft.quote)
       return
     }
     if (id === 'quote') {
@@ -225,7 +220,6 @@ export function BoostOverlay({ store, t }: BoostOverlayProps) {
       createdAt: new Date().toISOString(),
     })
     window.getSelection()?.removeAllRanges()
-    store.notify(t('notice.saved'))
   }
 
   /**
@@ -249,7 +243,6 @@ export function BoostOverlay({ store, t }: BoostOverlayProps) {
     })
     setComposer(null)
     setNote('')
-    store.notify(t('notice.saved'))
   }
 
   return (
@@ -300,9 +293,6 @@ export function BoostOverlay({ store, t }: BoostOverlayProps) {
         </div>
       )}
 
-      {snapshot.notice !== undefined && (
-        <div className="dsh-boost-toast" data-dsh-boost="">{snapshot.notice}</div>
-      )}
     </>
   )
 }

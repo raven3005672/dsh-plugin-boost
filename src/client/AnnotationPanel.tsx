@@ -136,8 +136,7 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
    * @param lead - instruction line for this action.
    */
   const handOff = (annotation: Annotation, lead: string): void => {
-    const result = store.insertText(composeText(t, annotation, lead))
-    store.notify(result === 'ok' ? t('notice.added') : result === 'busy' ? t('notice.busy') : t('notice.failed'))
+    store.insertText(composeText(t, annotation, lead))
   }
 
   return (
@@ -329,10 +328,7 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
                   onSelect={(id) => {
                     setOverflowFor(null)
                     if (id === 'kind') store.toggleKind(annotation.id)
-                    if (id === 'delete') {
-                      store.remove(annotation.id)
-                      store.notify(t('notice.deleted'))
-                    }
+                    if (id === 'delete') store.remove(annotation.id)
                   }}
                   onClose={() => { setOverflowFor(null) }}
                   anchor={(

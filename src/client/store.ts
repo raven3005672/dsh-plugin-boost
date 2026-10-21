@@ -13,9 +13,6 @@ import { clear, paint } from './highlights.ts'
 /** Versioned storage prefix; bumping the suffix is a breaking data change. */
 const STORAGE_PREFIX = 'dsh-plugin-boost/v1/'
 
-/** How long a transient notice stays on screen. */
-const NOTICE_MS = 2600
-
 /** Browser-wide flag: show locating status and offsets in the list. */
 const DIAGNOSTICS_KEY = 'dsh-plugin-boost/diagnostics'
 
@@ -38,7 +35,6 @@ export interface BoostSnapshot {
   /** Annotation the list highlighted last. */
   readonly activeId: string | undefined
   /** Transient line shown after an action. */
-  readonly notice: string | undefined
   /** Whether the list exposes locating status and offsets. */
   readonly diagnostics: boolean
   /** Which kinds the list currently shows. */
@@ -119,13 +115,11 @@ export class BoostStore {
   private statuses = new Map<string, ResolveStatus>()
   private panelOpen = false
   private activeId: string | undefined
-  private notice: string | undefined
   private diagnostics = false
   private filter: ListFilter = 'quote'
   private presets: Preset[] = []
   private input: InputFacts = { draft: '', phase: 'plain', occurrences: 0, actions: undefined }
   private listeners = new Set<() => void>()
-  private noticeTimer = 0
   private signature = ''
   private snapshot: BoostSnapshot = {
     sessionId: undefined,
@@ -133,7 +127,6 @@ export class BoostStore {
     statuses: new Map(),
     panelOpen: false,
     activeId: undefined,
-    notice: undefined,
     diagnostics: false,
     filter: 'quote',
     presets: [],
@@ -160,7 +153,6 @@ export class BoostStore {
   dispose(): void {
     clear()
     this.listeners.clear()
-    window.clearTimeout(this.noticeTimer)
   }
 
   /**
@@ -381,20 +373,6 @@ export class BoostStore {
   }
 
   /**
-   * Show a transient line under the panel.
-   * @param text - message to display.
-   */
-  notify(text: string): void {
-    this.notice = text
-    this.publish()
-    window.clearTimeout(this.noticeTimer)
-    this.noticeTimer = window.setTimeout(() => {
-      this.notice = undefined
-      this.publish()
-    }, NOTICE_MS)
-  }
-
-  /**
    * Push composed text into the composer without clobbering chips.
    *
    * An empty draft is replaced outright. A draft without reference chips is
@@ -431,8 +409,7 @@ export class BoostStore {
       statuses: this.statuses,
       panelOpen: this.panelOpen,
       activeId: this.activeId,
-      notice: this.notice,
-      diagnostics: this.diagnostics,
+        diagnostics: this.diagnostics,
       filter: this.filter,
       presets: this.presets,
       revision: this.snapshot.revision + 1,
