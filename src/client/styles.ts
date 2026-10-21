@@ -381,33 +381,6 @@ body[data-ds-dark-theme] .dsh-boost-more:hover {
   background: rgba(255, 255, 255, 0.1);
 }
 
-.dsh-boost-menu {
-  position: fixed;
-  min-width: 132px;
-  padding: 4px;
-  border: 1px solid var(--dsw-alias-border-l2, #e5e7eb);
-  border-radius: 8px;
-  background: var(--dsw-alias-bg-layer-2, #ffffff);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
-  z-index: 40;
-}
-.dsh-boost-menu button {
-  display: block;
-  width: 100%;
-  text-align: left;
-  font: inherit;
-  font-size: 12.5px;
-  padding: 6px 10px;
-  border: 0;
-  border-radius: 5px;
-  background: none;
-  color: var(--dsw-alias-label-primary, #1f2328);
-  cursor: pointer;
-}
-.dsh-boost-menu button:hover {
-  background: var(--dsw-alias-bg-layer-3, rgba(0, 0, 0, 0.05));
-}
-
 .dsh-boost-composer {
   position: fixed;
   width: 300px;

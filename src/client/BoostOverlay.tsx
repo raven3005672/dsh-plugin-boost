@@ -8,6 +8,8 @@
  * component's effect, not at module scope.
  */
 import { useEffect, useRef, useState } from 'react'
+import { Menu } from '@deepseek-ai/dsh-client-ui-primitives'
+import type { MenuEntry } from '@deepseek-ai/dsh-client-ui-primitives'
 import { describeSelection, owningMessage } from './anchor.ts'
 import { AnnotationPanel } from './AnnotationPanel.tsx'
 import type { DraftSelection } from './contract.ts'
@@ -121,20 +123,20 @@ export function BoostOverlay({ store, t }: BoostOverlayProps) {
       })
     }
 
-    /** Close transient surfaces on an outside press. */
+    /**
+     * Close the note composer on an outside press. The selection menu is a
+     * portaled Menu and owns its own dismissal: this handler used to close it
+     * too, which unmounted the list on mousedown and swallowed the row click.
+     */
     const onPointerDown = (event: MouseEvent): void => {
       const target = event.target
       if (!(target instanceof Element)) return
-      if (target.closest('[data-dsh-boost]') === null) {
-        setMenu(null)
-        setComposer(null)
-      }
+      if (target.closest('[data-dsh-boost]') === null) setComposer(null)
     }
 
-    /** Escape closes whatever is open. */
+    /** Escape closes the composer; the menu listens for its own Escape. */
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key !== 'Escape') return
-      setMenu(null)
       setComposer(null)
     }
 
@@ -169,6 +171,63 @@ export function BoostOverlay({ store, t }: BoostOverlayProps) {
     }
   }, [store])
 
+  const menuItems: MenuEntry[] = menu === null
+    ? []
+    : menu.overlapId === undefined
+      ? [
+          { id: 'mark', label: t('menu.mark') },
+          { id: 'quote', label: t('menu.annotate') },
+          { id: 'copy', label: t('menu.copy') },
+        ]
+      : [
+          { id: 'unannotate', label: t('menu.unannotate') },
+          { id: 'copy', label: t('menu.copy') },
+        ]
+
+  /**
+   * Act on the selection menu; every branch closes it.
+   * @param id - the chosen row id.
+   */
+  const handleMenuSelect = (id: string): void => {
+    const opened = menu
+    setMenu(null)
+    if (opened === null) return
+    if (id === 'unannotate') {
+      store.remove(opened.overlapId ?? '')
+      store.notify(t('notice.unannotated'))
+      window.getSelection()?.removeAllRanges()
+      return
+    }
+    if (id === 'copy') {
+      void navigator.clipboard?.writeText(opened.draft.quote).then(
+        () => { store.notify(t('notice.copied')) },
+        () => { /* Clipboard refused; nothing to report beyond the copy itself. */ },
+      )
+      return
+    }
+    if (id === 'quote') {
+      setComposer({ ...opened, left: opened.x, bottom: opened.y })
+      setNote('')
+      return
+    }
+    store.add({
+      id: crypto.randomUUID(),
+      sessionId: snapshot.sessionId ?? '',
+      kind: 'mark',
+      nodeKey: opened.nodeKey,
+      flowKey: opened.flowKey,
+      start: opened.draft.start,
+      end: opened.draft.end,
+      quote: opened.draft.quote,
+      prefix: opened.draft.prefix,
+      suffix: opened.draft.suffix,
+      note: '',
+      createdAt: new Date().toISOString(),
+    })
+    window.getSelection()?.removeAllRanges()
+    store.notify(t('notice.saved'))
+  }
+
   /**
    * Save the pending selection as an annotation.
    */
@@ -197,83 +256,17 @@ export function BoostOverlay({ store, t }: BoostOverlayProps) {
     <>
       <AnnotationPanel store={store} t={t} />
 
-      {menu !== null && (
-        <div className="dsh-boost-menu" data-dsh-boost="" style={{ left: menu.x, top: menu.y }}>
-          {menu.overlapId === undefined
-            ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => {
-                    store.add({
-                      id: crypto.randomUUID(),
-                      sessionId: snapshot.sessionId ?? '',
-                      kind: 'mark',
-                      nodeKey: menu.nodeKey,
-                      flowKey: menu.flowKey,
-                      start: menu.draft.start,
-                      end: menu.draft.end,
-                      quote: menu.draft.quote,
-                      prefix: menu.draft.prefix,
-                      suffix: menu.draft.suffix,
-                      note: '',
-                      createdAt: new Date().toISOString(),
-                    })
-                    window.getSelection()?.removeAllRanges()
-                    setMenu(null)
-                    store.notify(t('notice.saved'))
-                  }}
-                >
-                  {t('menu.mark')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setComposer({ ...menu, left: menu.x, bottom: menu.y })
-                    setNote('')
-                    setMenu(null)
-                  }}
-                >
-                  {t('menu.annotate')}
-                </button>
-              </>
-            )
-            : (
-              <button
-                type="button"
-                onClick={() => {
-                  store.remove(menu.overlapId ?? '')
-                  store.notify(t('notice.unannotated'))
-                  window.getSelection()?.removeAllRanges()
-                  setMenu(null)
-                }}
-              >
-                {t('menu.unannotate')}
-              </button>
-            )}
-          <button
-            type="button"
-            onClick={() => {
-              void navigator.clipboard?.writeText(menu.draft.quote).then(
-                () => { store.notify(t('notice.copied')) },
-                () => { /* Clipboard refused; nothing to report beyond the copy itself. */ },
-              )
-              setMenu(null)
-            }}
-          >
-            {t('menu.copy')}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              window.getSelection()?.removeAllRanges()
-              setMenu(null)
-            }}
-          >
-            {t('menu.cancel')}
-          </button>
-        </div>
-      )}
+      <Menu
+        open={menu !== null}
+        portal
+        compact
+        align="start"
+        items={menuItems}
+        onSelect={handleMenuSelect}
+        onClose={() => { setMenu(null) }}
+        getAnchorRect={() => menu === null ? null : new DOMRect(menu.x, menu.y, 0, 0)}
+        anchor={<span data-boost-anchor="" />}
+      />
 
       {composer !== null && (
         <div
