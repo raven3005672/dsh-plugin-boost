@@ -167,6 +167,13 @@ export function BoostOverlay({ store, t }: BoostOverlayProps) {
       if (scheduled !== 0) return
       scheduled = requestAnimationFrame(() => {
         scheduled = 0
+        // The trajectory tab and other views remove the transcript while the
+        // composer (and this panel) stay mounted; nothing in the column can be
+        // annotated any more, so the column closes with it.
+        if (store.getSnapshot().panelOpen && document.querySelector('[data-chat-flow]') === null) {
+          store.togglePanel(false)
+          return
+        }
         store.refresh()
       })
     })

@@ -149,7 +149,7 @@ export class BoostStore {
     this.viewEpoch += 1
     // Leaving a conversation also dismisses its annotation column: the list
     // describes the text that is no longer on screen.
-    this.panelOpen = false
+    this.setPanelOpen(false)
     this.sessionId = sessionId
     this.annotations = readStored(sessionId)
     this.activeId = undefined
@@ -164,7 +164,7 @@ export class BoostStore {
   leaveConversation(): void {
     if (this.sessionId === undefined) return
     this.viewEpoch += 1
-    this.panelOpen = false
+    this.setPanelOpen(false)
     this.publish()
   }
 
@@ -309,11 +309,21 @@ export class BoostStore {
    * @param open - target state; omitted toggles.
    */
   togglePanel(open?: boolean): void {
-    this.panelOpen = open ?? !this.panelOpen
-    if (this.panelOpen) document.documentElement.setAttribute('data-dsh-boost-shift', '')
+    this.setPanelOpen(open ?? !this.panelOpen)
+  }
+
+  /**
+   * Single writer for the panel flag: the column shift is a document-level
+   * side effect, so every path that closes the panel has to clear it too.
+   * @param open - target state.
+   */
+  private setPanelOpen(open: boolean): void {
+    const changed = this.panelOpen !== open
+    this.panelOpen = open
+    if (open) document.documentElement.setAttribute('data-dsh-boost-shift', '')
     else document.documentElement.removeAttribute('data-dsh-boost-shift')
-    this.publish()
-    if (this.panelOpen) this.refresh()
+    if (changed) this.publish()
+    if (open) this.refresh()
   }
 
   /** Read the persisted display flags; call once before the first render. */
