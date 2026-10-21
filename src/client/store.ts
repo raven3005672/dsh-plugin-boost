@@ -42,7 +42,7 @@ export interface BoostSnapshot {
   /** Which kinds the list currently shows. */
   readonly filter: ListFilter
   /** User shortcuts from the settings row; empty means "use the built-ins". */
-  readonly presets: readonly Preset[]
+  readonly presets: readonly Preset[] | undefined
   /** Monotonic revision; identity changes on every notify. */
   readonly revision: number
 }
@@ -120,7 +120,7 @@ export class BoostStore {
   private activeId: string | undefined
   private diagnostics = false
   private filter: ListFilter = 'quote'
-  private presets: Preset[] = []
+  private presets: Preset[] | undefined
   private input: InputFacts = { draft: '', phase: 'plain', occurrences: 0, actions: undefined }
   private listeners = new Set<() => void>()
   private signature = ''
@@ -133,7 +133,7 @@ export class BoostStore {
     activeId: undefined,
     diagnostics: false,
     filter: 'quote',
-    presets: [],
+    presets: undefined,
     revision: 0,
   }
 
@@ -339,10 +339,13 @@ export class BoostStore {
 
   /**
    * Replace the shortcut list with the settings row's current value.
-   * @param presets - configured presets; an empty list selects the built-ins.
+   * @param presets - configured presets; absent selects the built-ins, an empty
+   * list means the user removed every shortcut.
    */
-  setPresets(presets: readonly Preset[]): void {
-    this.presets = presets.filter(preset => preset.label.trim() !== '' || preset.prompt.trim() !== '')
+  setPresets(presets: readonly Preset[] | undefined): void {
+    this.presets = presets === undefined
+      ? undefined
+      : presets.filter(preset => preset.label.trim() !== '' || preset.prompt.trim() !== '')
     this.publish()
   }
 

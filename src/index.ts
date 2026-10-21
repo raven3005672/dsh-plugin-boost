@@ -26,18 +26,18 @@ export interface Preset {
 /** Settings that reach the browser half through configForms. */
 export interface Config {
   /**
-   * User shortcuts. An empty list means "use the built-in, localized set",
-   * so a fresh install follows the UI language instead of shipping Chinese
-   * defaults to everyone.
+   * User shortcuts. Absent means "never configured" and selects the built-in,
+   * localized set, so a fresh install follows the UI language. An explicitly
+   * empty list means the user removed every shortcut and wants none.
    */
-  presets: Preset[]
+  presets?: Preset[]
 }
 
 export const Config = z.object({
   presets: z.array(z.object({
     label: z.string().default(''),
     prompt: z.string().default(''),
-  })).default([]).volatile(),
+  })).required(false).volatile(),
 })
 
 /**

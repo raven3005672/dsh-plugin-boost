@@ -72,7 +72,14 @@ export function apply(ctx: Context): void {
   // (or an empty list) leaves the built-in, localized set in place.
   ctx.effect(() => {
     const form = ctx.configForms.get<{ presets?: Preset[] }>(SETTINGS_NAMESPACE)
-    const sync = (): void => { store.setPresets(form.getSnapshot().value?.presets ?? []) }
+    const sync = (): void => {
+      const snapshot = form.getSnapshot()
+      // An unset array resolves to [], which reads the same as "the user
+      // deleted every shortcut"; presence in the user layer separates them.
+      const stored = typeof snapshot.user === 'object' && snapshot.user !== null
+        && Object.hasOwn(snapshot.user, 'presets')
+      store.setPresets(stored ? snapshot.value?.presets ?? [] : undefined)
+    }
     // Subscribe before the first read: a change landing between the two would
     // otherwise be lost.
     const unsubscribe = form.subscribe(sync)

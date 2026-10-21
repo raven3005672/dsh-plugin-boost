@@ -126,14 +126,13 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
 
   if (!snapshot.panelOpen) return null
 
-  // Configured shortcuts win; an empty config means the built-in, localized set.
-  const presets: readonly Preset[] = snapshot.presets.length > 0
-    ? snapshot.presets
-    : [
-        { label: t('preset.explain'), prompt: t('preset.explainPrompt') },
-        { label: t('preset.disagree'), prompt: t('preset.disagreePrompt') },
-      ]
-  const primaryPreset = presets[0]
+  // Never configured means the built-in pair; an explicitly empty list means
+  // the user deleted every shortcut and wants no preset button at all.
+  const presets: readonly Preset[] = snapshot.presets ?? [
+    { label: t('preset.explain'), prompt: t('preset.explainPrompt') },
+    { label: t('preset.disagree'), prompt: t('preset.disagreePrompt') },
+  ]
+  const primaryPreset: Preset | undefined = presets[0]
   const quotes = snapshot.annotations.filter(annotation => annotation.kind === 'quote').length
   const marks = snapshot.annotations.length - quotes
   const visible = snapshot.annotations.filter(annotation =>
@@ -290,7 +289,7 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
                     {t('item.add')}
                   </button>
                 )}
-                {annotation.kind === 'quote' && (
+                {annotation.kind === 'quote' && primaryPreset !== undefined && (
                   <span className="dsh-boost-split">
                     <button
                       type="button"
