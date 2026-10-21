@@ -157,6 +157,7 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
           align="start"
           compact
           portal
+          listClassName="dsh-boost-menu-surface"
           items={filterItems}
           selectedId={snapshot.filter}
           onSelect={(id) => {
@@ -291,6 +292,7 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
                       align="start"
                       compact
                       portal
+                      listClassName="dsh-boost-menu-surface"
                       items={presetItems}
                       onSelect={(id) => {
                         const preset = presets[Number(id.slice(1))]
@@ -322,6 +324,7 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
                   align="end"
                   compact
                   portal
+                  listClassName="dsh-boost-menu-surface"
                   items={overflowItems}
                   onSelect={(id) => {
                     setOverflowFor(null)

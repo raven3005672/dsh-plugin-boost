@@ -172,7 +172,7 @@ html[data-dsh-boost-shift] [class*='widthHandle'] {
   border-left: 3px solid var(--dsh-boost-accent);
   border-radius: 8px;
   padding: 6px 8px 6px 9px;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
   cursor: pointer;
   background: transparent;
   box-shadow: none;
@@ -358,6 +358,14 @@ body[data-ds-dark-theme] .dsh-boost-action:hover {
 }
 /* Same shape as the app's open-with control: one hairline pill, a main
    action and a narrow chevron half split by a hairline. */
+/* The shell's menu material is 58% opaque so it picks up whatever sits behind
+   it. Inside this card that means a highlighted row tints the whole menu warm,
+   while the same menu over plain text looks white. Pin our menus to the solid
+   layer colour so all four read the same. */
+.dsh-boost-menu-surface {
+  --dsw-menu-surface-fill: var(--dsw-alias-bg-layer-2, #ffffff);
+}
+
 .dsh-boost-split {
   display: inline-flex;
   align-items: stretch;

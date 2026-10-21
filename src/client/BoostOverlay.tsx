@@ -261,6 +261,7 @@ export function BoostOverlay({ store, t }: BoostOverlayProps) {
         portal
         compact
         align="start"
+        listClassName="dsh-boost-menu-surface"
         items={menuItems}
         onSelect={handleMenuSelect}
         onClose={() => { setMenu(null) }}
