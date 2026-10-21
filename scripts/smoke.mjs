@@ -14,7 +14,14 @@ import assert from 'node:assert/strict'
 
 const pkgRoot = join(dirname(fileURLToPath(import.meta.url)), '..')
 const pkg = JSON.parse(readFileSync(join(pkgRoot, 'package.json'), 'utf8'))
-const require = createRequire(join(pkgRoot, 'package.json'))
+const nodeRequire = createRequire(join(pkgRoot, 'package.json'))
+// The shell seeds the UI primitives in the module table; Node cannot load that
+// package here (it carries CSS and a browser runtime), so the loader hands back
+// a stub with the components the bundle imports.
+const SHARED_PRIMITIVES = '@deepseek-ai/dsh-client-ui-primitives'
+const require = specifier => specifier === SHARED_PRIMITIVES
+  ? { Menu: () => null }
+  : nodeRequire(specifier)
 const source = readFileSync(join(pkgRoot, 'lib/client.js'), 'utf8')
 
 // apply() injects a stylesheet through the DOM; a bare stub is enough here.

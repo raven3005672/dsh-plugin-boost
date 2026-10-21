@@ -1,15 +1,17 @@
 /**
- * The floating annotation panel: one card per annotation with the two
- * composer hand-offs and a delete control.
+ * The floating annotation panel: one card per annotation, a kind filter, and
+ * the composer hand-offs.
  *
- * It renders as a direct child of the shell overlay layer, which is
- * click-through; a direct child re-enables pointer events for itself, so the
- * card never blocks the conversation underneath.
+ * Popovers come from the shell's `Menu` primitive so their surface, keyboard
+ * handling and dismissal match the rest of the app; this file only owns the
+ * triggers and the content.
  */
 import { useEffect, useLayoutEffect, useState } from 'react'
+import { Menu } from '@deepseek-ai/dsh-client-ui-primitives'
+import type { MenuEntry } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { Annotation, Preset } from './contract.ts'
 import type { BoostTranslate } from './locales.ts'
-import type { BoostStore } from './store.ts'
+import type { BoostStore, ListFilter } from './store.ts'
 import { useBoost } from './useBoost.ts'
 
 /** Props for the panel card. */
@@ -29,15 +31,21 @@ export interface AnnotationPanelProps {
  */
 function composeText(t: BoostTranslate, annotation: Annotation, lead: string): string {
   const quoted = annotation.quote.split('\n').map(line => `> ${line}`).join('\n')
-  // No blank separator lines: the draft reads as one compact block. The model
-  // still sees the `>` prefix on quoted lines, which is the only boundary that
-  // matters; markdown rendering in the sent bubble is incidental.
   const blocks: string[] = []
   if (lead !== '') blocks.push(lead)
   blocks.push(quoted)
   const note = annotation.note.trim()
   if (note !== '') blocks.push(`${t('note.label')}${note}`)
   return blocks.join('\n')
+}
+
+/** Disclosure chevron shared by the two trigger buttons. */
+function Chevron(): React.ReactElement {
+  return (
+    <svg viewBox="0 0 10 6" width="9" height="6" aria-hidden focusable="false">
+      <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
 }
 
 /**
@@ -47,21 +55,11 @@ function composeText(t: BoostTranslate, annotation: Annotation, lead: string): s
  */
 export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
   const snapshot = useBoost(store)
-  const [menu, setMenu] = useState<{ id: string; x: number; y: number; kind: 'overflow' | 'presets' } | null>(null)
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [presetFor, setPresetFor] = useState<string | null>(null)
+  const [overflowFor, setOverflowFor] = useState<string | null>(null)
   const [editing, setEditing] = useState<{ id: string; text: string } | null>(null)
   const [box, setBox] = useState<{ top: number; maxHeight: number } | null>(null)
-
-  useEffect(() => {
-    if (menu === null) return
-    /** Close the overflow menu on any press outside it. */
-    const close = (event: MouseEvent): void => {
-      const target = event.target
-      if (target instanceof Element && target.closest('[data-boost-overflow]') !== null) return
-      setMenu(null)
-    }
-    document.addEventListener('mousedown', close, true)
-    return () => document.removeEventListener('mousedown', close, true)
-  }, [menu])
 
   // Keep the card between the transcript's top edge (below the header rule)
   // and the composer card's bottom border, so it never covers either rule and
@@ -90,6 +88,14 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
     }
   }, [snapshot.panelOpen])
 
+  useEffect(() => {
+    if (snapshot.panelOpen) return
+    setFilterOpen(false)
+    setPresetFor(null)
+    setOverflowFor(null)
+    setEditing(null)
+  }, [snapshot.panelOpen])
+
   if (!snapshot.panelOpen) return null
 
   // Configured shortcuts win; an empty config means the built-in, localized set.
@@ -106,6 +112,13 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
   const visible = snapshot.annotations.filter(annotation =>
     snapshot.filter === 'all' || annotation.kind === snapshot.filter)
   const unusable = [...snapshot.statuses.values()].some(status => status === 'lost' || status === 'missing')
+  const filterLabel = snapshot.filter === 'mark' ? t('filter.mark') : snapshot.filter === 'all' ? t('filter.all') : t('filter.quote')
+
+  const filterItems: MenuEntry[] = [
+    { id: 'quote', label: `${t('filter.quote')} (${quotes})` },
+    { id: 'mark', label: `${t('filter.mark')} (${marks})` },
+    { id: 'all', label: `${t('filter.all')} (${snapshot.annotations.length})` },
+  ]
 
   /**
    * Push composed annotation text into the composer and report the outcome.
@@ -129,16 +142,31 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
         <span className="dsh-boost-panel-title">
           {t('panel.title')} · {t('panel.count', { count: visible.length })}
         </span>
-        <select
-          className="dsh-boost-filter"
-          value={snapshot.filter}
-          aria-label={t('panel.title')}
-          onChange={event => { store.setFilter(event.target.value as 'quote' | 'mark' | 'all') }}
-        >
-          <option value="quote">{`${t('filter.quote')} (${quotes})`}</option>
-          <option value="mark">{`${t('filter.mark')} (${marks})`}</option>
-          <option value="all">{`${t('filter.all')} (${snapshot.annotations.length})`}</option>
-        </select>
+        <Menu
+          open={filterOpen}
+          align="start"
+          compact
+          portal
+          items={filterItems}
+          selectedId={snapshot.filter}
+          onSelect={(id) => {
+            store.setFilter(id as ListFilter)
+            setFilterOpen(false)
+          }}
+          onClose={() => { setFilterOpen(false) }}
+          anchor={(
+            <button
+              type="button"
+              className="dsh-boost-trigger"
+              aria-haspopup="menu"
+              aria-expanded={filterOpen}
+              onClick={() => { setFilterOpen(open => !open) }}
+            >
+              {filterLabel}
+              <Chevron />
+            </button>
+          )}
+        />
         <button type="button" className="dsh-boost-close" onClick={() => { store.togglePanel(false) }}>
           {t('panel.close')}
         </button>
@@ -153,6 +181,19 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
         )}
         {visible.map(annotation => {
           const status = snapshot.statuses.get(annotation.id) ?? 'missing'
+          const overflowItems: MenuEntry[] = [
+            {
+              id: 'kind',
+              label: annotation.kind === 'quote' ? t('item.toMark') : t('item.toQuote'),
+            },
+            { id: 'edit', label: t('item.editNote') },
+            { type: 'separator', id: 'sep' },
+            { id: 'delete', label: t('item.delete'), danger: true },
+          ]
+          const presetItems: MenuEntry[] = presets.map((preset, index) => ({
+            id: `p${index}`,
+            label: preset.label,
+          }))
           return (
             <li
               key={annotation.id}
@@ -188,19 +229,7 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
                     }}
                   />
                 )
-                : (
-                  <div
-                    className="dsh-boost-note"
-                    data-empty={annotation.note.trim() === '' ? 'true' : undefined}
-                    title={t('item.noteHint')}
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      setEditing({ id: annotation.id, text: annotation.note })
-                    }}
-                  >
-                    {annotation.note.trim() === '' ? t('item.notePlaceholder') : annotation.note}
-                  </div>
-                )}
+                : annotation.note.trim() !== '' && <div className="dsh-boost-note">{annotation.note}</div>}
               {snapshot.diagnostics && (
                 <div className="dsh-boost-meta">
                   <span className="dsh-boost-badge" data-status={status}>{status}</span>
@@ -210,22 +239,33 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
               <div className="dsh-boost-actions">
                 {annotation.kind === 'quote' && (
                   <>
-                    <button
-                      type="button"
-                      className="dsh-boost-action"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        const rect = event.currentTarget.getBoundingClientRect()
-                        setMenu({
-                          id: annotation.id,
-                          kind: 'presets',
-                          x: Math.min(rect.left, window.innerWidth - 180),
-                          y: rect.bottom + 4,
-                        })
+                    <Menu
+                      open={presetFor === annotation.id}
+                      align="start"
+                      compact
+                      portal
+                      items={presetItems}
+                      onSelect={(id) => {
+                        const preset = presets[Number(id.slice(1))]
+                        if (preset !== undefined) handOff(annotation, preset.prompt)
+                        setPresetFor(null)
                       }}
-                    >
-                      {`${primaryPreset?.label ?? t('item.explain')} ▾`}
-                    </button>
+                      onClose={() => { setPresetFor(null) }}
+                      anchor={(
+                        <button
+                          type="button"
+                          className="dsh-boost-action"
+                          aria-haspopup="menu"
+                          aria-expanded={presetFor === annotation.id}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            setPresetFor(current => current === annotation.id ? null : annotation.id)
+                          }}
+                        >
+                          {`${primaryPreset?.label ?? t('item.explain')} ▾`}
+                        </button>
+                      )}
+                    />
                     <button
                       type="button"
                       className="dsh-boost-action"
@@ -235,79 +275,44 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
                     </button>
                   </>
                 )}
-                <button
-                  type="button"
-                  className="dsh-boost-more"
-                  aria-label={t('item.more')}
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    const rect = event.currentTarget.getBoundingClientRect()
-                    setMenu({
-                      id: annotation.id,
-                      kind: 'overflow',
-                      x: Math.min(rect.right - 148, window.innerWidth - 160),
-                      y: rect.bottom + 4,
-                    })
+                <Menu
+                  open={overflowFor === annotation.id}
+                  align="end"
+                  compact
+                  portal
+                  items={overflowItems}
+                  onSelect={(id) => {
+                    setOverflowFor(null)
+                    if (id === 'kind') store.toggleKind(annotation.id)
+                    if (id === 'edit') setEditing({ id: annotation.id, text: annotation.note })
+                    if (id === 'delete') {
+                      store.remove(annotation.id)
+                      store.notify(t('notice.deleted'))
+                    }
                   }}
-                >
-                  ⋯
-                </button>
+                  onClose={() => { setOverflowFor(null) }}
+                  anchor={(
+                    <button
+                      type="button"
+                      className="dsh-boost-more"
+                      aria-label={t('item.more')}
+                      aria-haspopup="menu"
+                      aria-expanded={overflowFor === annotation.id}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        setOverflowFor(current => current === annotation.id ? null : annotation.id)
+                      }}
+                    >
+                      ⋯
+                    </button>
+                  )}
+                />
               </div>
             </li>
           )
         })}
       </ul>
-      {menu !== null && (() => {
-        const target = snapshot.annotations.find(annotation => annotation.id === menu.id)
-        if (target === undefined) return null
-        return (
-          <div
-            className="dsh-boost-overflow"
-            data-dsh-boost=""
-            data-boost-overflow=""
-            style={{ left: menu.x, top: menu.y }}
-          >
-            {menu.kind === 'presets'
-              ? presets.map((preset, index) => (
-                <button
-                  key={`${preset.label}-${index}`}
-                  type="button"
-                  onClick={() => {
-                    handOff(target, preset.prompt)
-                    setMenu(null)
-                  }}
-                >
-                  {preset.label}
-                </button>
-              ))
-              : (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      store.toggleKind(target.id)
-                      setMenu(null)
-                    }}
-                  >
-                    {target.kind === 'quote' ? t('item.toMark') : t('item.toQuote')}
-                  </button>
-                  <button
-                    type="button"
-                    data-tone="danger"
-                    onClick={() => {
-                      store.remove(target.id)
-                      store.notify(t('notice.deleted'))
-                      setMenu(null)
-                    }}
-                  >
-                    {t('item.delete')}
-                  </button>
-                </>
-              )}
-          </div>
-        )
-      })()}
-      {unusable && <div className="dsh-boost-empty">{t('panel.lostHint')}</div>}
+      {unusable && <div className="dsh-boost-hint">{t('panel.lostHint')}</div>}
       <footer className="dsh-boost-panel-foot">
         <button
           type="button"

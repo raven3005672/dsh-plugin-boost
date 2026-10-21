@@ -114,30 +114,33 @@ html[data-dsh-boost-shift] [data-conversation-scroll] {
   cursor: pointer;
   color: var(--dsw-alias-label-secondary, #6b7280);
 }
-.dsh-boost-filter {
-  min-width: 0;
-  max-width: 128px;
-  flex: 0 1 auto;
+.dsh-boost-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  max-width: 132px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary, #6b7280);
   font: inherit;
-  font-size: 11px;
-  padding: 1px 16px 1px 4px;
-  border-radius: 6px;
-  border: 1px solid var(--dsw-alias-border-l2, #e5e7eb);
-  /* A native menu-list select keeps the UA's light chrome even in the dark
-     palette; dropping the appearance is the only way to honour our colours. */
-  appearance: none;
-  -webkit-appearance: none;
-  background-color: var(--dsw-alias-bg-layer-2, #ffffff);
-  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%2381858c' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 4px center;
-  background-size: 9px;
-  color: var(--dsw-alias-label-primary, #1f2328);
+  font-size: 12px;
+  line-height: 20px;
   cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-body[data-ds-dark-theme] .dsh-boost-filter {
-  color-scheme: dark;
+.dsh-boost-trigger:hover {
+  background: var(--dsw-alias-bg-layer-3, rgba(0, 0, 0, 0.05));
+  color: var(--dsw-alias-label-primary, #1f2328);
 }
+.dsh-boost-trigger[aria-expanded='true'] {
+  background: var(--dsw-alias-bg-layer-3, rgba(0, 0, 0, 0.06));
+}
+
 .dsh-boost-list {
   flex: 1;
   min-height: 0;
@@ -147,7 +150,7 @@ body[data-ds-dark-theme] .dsh-boost-filter {
   list-style: none;
 }
 .dsh-boost-empty {
-  padding: 16px 12px;
+  padding: 10px 12px;
   color: var(--dsw-alias-label-secondary, #6b7280);
   font-size: 12px;
   line-height: 1.7;
@@ -161,8 +164,8 @@ body[data-ds-dark-theme] .dsh-boost-filter {
   border: 0;
   border-left: 3px solid var(--dsh-boost-accent);
   border-radius: 6px;
-  padding: 7px 9px;
-  margin-bottom: 6px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
   cursor: pointer;
   background: var(--dsh-boost-tint);
   box-shadow: none;
@@ -268,10 +271,18 @@ body[data-ds-dark-theme] .dsh-boost-quote[data-kind='mark'] {
 .dsh-boost-badge[data-status='fuzzy'] { color: #b45309; }
 .dsh-boost-badge[data-status='lost'],
 .dsh-boost-badge[data-status='missing'] { color: #b91c1c; }
+.dsh-boost-hint {
+  padding: 6px 12px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--dsw-alias-label-secondary, #6b7280);
+  border-top: 1px solid var(--dsw-alias-border-l2, #e5e7eb);
+}
+
 .dsh-boost-panel-foot {
   display: flex;
   justify-content: flex-end;
-  padding: 4px 10px;
+  padding: 2px 8px;
   border-top: 1px solid var(--dsw-alias-border-l2, #e5e7eb);
 }
 .dsh-boost-foot-button {
@@ -296,193 +307,45 @@ body[data-ds-dark-theme] .dsh-boost-quote[data-kind='mark'] {
 }
 .dsh-boost-actions {
   display: flex;
+  align-items: center;
   gap: 6px;
-  margin-top: 8px;
+  margin-top: 6px;
   flex-wrap: wrap;
 }
 .dsh-boost-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
   font: inherit;
-  font-size: 11.5px;
-  padding: 3px 8px;
-  border-radius: 6px;
-  border: 1px solid var(--dsw-alias-border-l2, #e5e7eb);
+  font-size: 12px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid var(--dsw-alias-border-l2, rgba(0, 0, 0, 0.1));
   background: transparent;
   color: var(--dsw-alias-label-primary, #1f2328);
   cursor: pointer;
 }
 .dsh-boost-action:hover {
-  border-color: var(--dsw-alias-brand-primary, #2563eb);
-  color: var(--dsw-alias-brand-primary, #2563eb);
+  background: var(--dsw-alias-bg-layer-3, rgba(0, 0, 0, 0.05));
 }
 .dsh-boost-more {
   margin-left: auto;
+  height: 24px;
+  min-width: 24px;
   font: inherit;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1;
-  padding: 3px 7px;
-  border-radius: 6px;
-  border: 1px solid transparent;
+  padding: 0 6px;
+  border-radius: 8px;
+  border: 0;
   background: transparent;
   color: var(--dsw-alias-label-secondary, #6b7280);
   cursor: pointer;
 }
 .dsh-boost-more:hover {
-  border-color: var(--dsw-alias-border-l2, #e5e7eb);
-  color: var(--dsw-alias-label-primary, #1f2328);
-}
-
-.dsh-boost-overflow {
-  position: fixed;
-  z-index: 60;
-  min-width: 148px;
-  padding: 4px;
-  border: 1px solid var(--dsw-alias-border-l2, #e5e7eb);
-  border-radius: 8px;
-  background: var(--dsw-alias-bg-layer-2, #ffffff);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
-}
-.dsh-boost-overflow button {
-  display: block;
-  width: 100%;
-  text-align: left;
-  font: inherit;
-  font-size: 12px;
-  padding: 6px 10px;
-  border: 0;
-  border-radius: 5px;
-  background: none;
-  color: var(--dsw-alias-label-primary, #1f2328);
-  cursor: pointer;
-}
-.dsh-boost-overflow button:hover {
   background: var(--dsw-alias-bg-layer-3, rgba(0, 0, 0, 0.05));
-}
-.dsh-boost-overflow button[data-tone='danger'] {
-  color: #b91c1c;
-}
-
-.dsh-boost-menu {
-  position: fixed;
-  min-width: 132px;
-  padding: 4px;
-  border: 1px solid var(--dsw-alias-border-l2, #e5e7eb);
-  border-radius: 8px;
-  background: var(--dsw-alias-bg-layer-2, #ffffff);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
-  z-index: 40;
-}
-.dsh-boost-menu button {
-  display: block;
-  width: 100%;
-  text-align: left;
-  font: inherit;
-  font-size: 12.5px;
-  padding: 6px 10px;
-  border: 0;
-  border-radius: 5px;
-  background: none;
   color: var(--dsw-alias-label-primary, #1f2328);
-  cursor: pointer;
-}
-.dsh-boost-menu button:hover {
-  background: var(--dsw-alias-bg-layer-2, #f3f4f6);
-}
-
-.dsh-boost-composer {
-  position: fixed;
-  width: 300px;
-  padding: 10px;
-  border: 1px solid var(--dsw-alias-border-l2, #e5e7eb);
-  border-radius: 10px;
-  background: var(--dsw-alias-bg-layer-2, #ffffff);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
-  z-index: 40;
-}
-.dsh-boost-composer textarea {
-  width: 100%;
-  min-height: 64px;
-  resize: vertical;
-  box-sizing: border-box;
-  font: inherit;
-  font-size: 12.5px;
-  padding: 6px;
-  border-radius: 6px;
-  border: 1px solid var(--dsw-alias-border-l2, #e5e7eb);
-  background: var(--dsw-alias-bg-base, #ffffff);
-  color: var(--dsw-alias-label-primary, #1f2328);
-}
-.dsh-boost-composer-row {
-  display: flex;
-  justify-content: flex-end;
-  gap: 6px;
-  margin-top: 8px;
-}
-.dsh-boost-composer-row button {
-  font: inherit;
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: 6px;
-  border: 1px solid var(--dsw-alias-border-l2, #e5e7eb);
-  background: transparent;
-  color: var(--dsw-alias-label-primary, #1f2328);
-  cursor: pointer;
-}
-/* The primary fill inverts per palette (near-black in light, near-white in
-   dark), so its label must come from the inverted label token — a fixed white
-   would vanish against the dark palette's white fill. */
-.dsh-boost-composer-row button[data-primary='true'] {
-  background: var(--dsw-alias-button-primary-fill, #2563eb);
-  border-color: var(--dsw-alias-button-primary-fill, #2563eb);
-  color: var(--dsw-alias-label-primary-inverted, #ffffff);
-  font-weight: 500;
-}
-.dsh-boost-composer-row button[data-primary='true']:hover {
-  background: var(--dsw-alias-button-primary-hover, var(--dsw-alias-button-primary-fill, #2563eb));
-  filter: brightness(1.05);
-}
-.dsh-boost-settings {
-  display: grid;
-  gap: 8px;
-  max-width: 560px;
-}
-.dsh-boost-settings-hint {
-  margin: 0;
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--dsw-alias-label-secondary, #6b7280);
-}
-.dsh-boost-settings-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.dsh-boost-settings-input {
-  flex: 1;
-  min-width: 0;
-  font: inherit;
-  font-size: 12px;
-  padding: 4px 6px;
-  border-radius: 6px;
-  border: 1px solid var(--dsw-alias-border-l2, #e5e7eb);
-  background: var(--dsw-alias-bg-layer-2, #ffffff);
-  color: var(--dsw-alias-label-primary, #1f2328);
-}
-.dsh-boost-settings-button {
-  font: inherit;
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: 6px;
-  border: 1px solid var(--dsw-alias-border-l2, #e5e7eb);
-  background: transparent;
-  color: var(--dsw-alias-label-primary, #1f2328);
-  cursor: pointer;
-}
-.dsh-boost-settings-button:hover:not(:disabled) {
-  border-color: var(--dsw-alias-brand-primary, #2563eb);
-}
-.dsh-boost-settings-button:disabled {
-  opacity: 0.5;
-  cursor: default;
 }
 
 .dsh-boost-toast {
