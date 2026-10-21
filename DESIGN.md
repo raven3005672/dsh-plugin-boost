@@ -53,7 +53,8 @@
 「解释」不再写死，改成用户自己的语汇：
 
 - 数据：`presets: { label, prompt }[]`，`label` 是按钮文字，`prompt` 是指令语
-- 存放：宿主 `Config`（volatile 数组）+ `plugins.row.config` 设置页，跟 profile 走
+- 存放：宿主 `Config`（volatile 数组）+ **`settings.section`（设置页独立分区）**，跟 profile 走
+- 注册细节：section 只给 `close`，`form` 要自己从 `configForms` 取并订阅，`configForms` 必须写进 `inject`
 - 空列表 = 用内置的本地化三条（解释 / 深入展开 / 不同意），所以新装用户看到的语言跟 UI 一致
 - 形态：一个 `[解释 ▾]` 下拉按钮；条目数不可控，不能用一排按钮
 - 设置页：label/prompt 两列可编辑、可增删、可「恢复内置」

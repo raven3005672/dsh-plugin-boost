@@ -36,7 +36,7 @@ assert.equal(registration.id, pkg.name, 'bundle id must equal the package name')
 
 const plugin = registration.factory(require)
 assert.equal(typeof plugin.apply, 'function', 'client plugin must export apply')
-assert.deepEqual(plugin.inject, ['slots', 'locale'], 'inject must declare its services')
+assert.deepEqual(plugin.inject, ['slots', 'locale', 'configForms'], 'inject must declare its services')
 
 const calls = []
 plugin.apply({
@@ -46,6 +46,16 @@ plugin.apply({
     return () => {}
   } },
   effect: execute => { calls.push('effect'); return execute() },
+  configForms: {
+    get: id => {
+      calls.push(`form:${id}`)
+      return {
+        getSnapshot: () => ({ value: { presets: [] }, status: 'ready', writable: true, revision: 1 }),
+        subscribe: () => () => {},
+        mutate: async () => true,
+      }
+    },
+  },
   slots: {
     inject: (slot, factory) => { calls.push(`inject:${slot}`); return factory() },
     register: (options) => { calls.push(`register:${options.name}#${options.key ?? options.id}`); return () => {} },
@@ -56,7 +66,8 @@ assert.ok(calls.includes('inject:conversation.composer.dock'), 'must wait on the
 assert.ok(calls.includes('register:conversation.composer.dock#boost.annotations'), 'must add the dock pill')
 assert.ok(calls.includes('inject:shell.overlay'), 'must wait on the shell overlay')
 assert.ok(calls.includes('register:shell.overlay#boost.overlay'), 'must render the overlay surfaces')
-assert.ok(calls.includes('register:plugins.row.config#dsh-plugin-boost#dsh-plugin-boost'), 'must offer the settings row')
+assert.ok(calls.some(call => call.startsWith('register:settings.section#')), 'must offer the settings section')
+assert.ok(calls.includes('form:dsh-plugin-boost'), 'must read its own settings namespace')
 assert.ok(calls.some(call => call.startsWith('locale:boost:')), 'must register its dictionaries')
 
 console.log(`ok ${pkg.name}: ${calls.join(' | ')}`)

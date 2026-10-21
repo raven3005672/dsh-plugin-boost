@@ -5,6 +5,7 @@
 
 /** Simplified Chinese copy. */
 export const zh = {
+  'nav': '标注',
   'pill.label': '标注',
   'pill.tip': '标注这段回答里的文字',
   'panel.title': '标注',
@@ -68,6 +69,7 @@ export type BoostKey = keyof typeof zh
 
 /** English copy. */
 export const en: Record<BoostKey, string> = {
+  'nav': 'Annotations',
   'pill.label': 'Notes',
   'pill.tip': 'Annotate text in this answer',
   'panel.title': 'Annotations',
