@@ -1,16 +1,21 @@
 /**
- * The Plugins-page row for boost.
+ * The Settings-page body for boost.
  *
  * It edits the one thing the plugin lets users decide: their own shortcuts.
  * The annotation list itself has no configurable surface by design — colours
  * and filters carry meaning, so they are not user inputs.
+ *
+ * The surface follows the shell's settings sections: an 18px heading, a 13px
+ * intro, hairline input rows and primitive buttons, so the page reads as part
+ * of Settings rather than as a plugin bolted onto it.
  */
 import { useEffect, useState } from 'react'
 import type { ReactElement } from 'react'
+import { Button, IconPlusOutlineRegular, IconTrashOutlineRegular } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { Preset } from './contract.ts'
 import type { BoostKey } from './locales.ts'
 
-/** One settings write the Plugins page accepts. */
+/** One settings write the settings page accepts. */
 export interface BoostConfigOp {
   /** Set or clear one field. */
   op: 'set' | 'unset'
@@ -32,10 +37,8 @@ export interface BoostConfigState {
   writable: boolean
 }
 
-/** Owner props of this slot: the two views the Plugins page renders. */
+/** Owner props of this slot. */
 export interface BoostSettingsRowProps {
-  /** `summary` fills the description line; `page` renders the body. */
-  view: 'summary' | 'page'
   /** Namespace translator supplied by the slot registration. */
   t?(key: BoostKey): string
   /** Row settings face, absent while the namespace is not served. */
@@ -46,11 +49,11 @@ export interface BoostSettingsRowProps {
 }
 
 /**
- * Render the row config page.
- * @param props - owner props supplied by the Plugins page.
- * @returns the description line, the form, or null while nothing is known.
+ * Render the boost settings page.
+ * @param props - owner props supplied by the settings section.
+ * @returns the heading, the shortcut rows and their actions.
  */
-export function BoostSettingsRow({ view, form, t }: BoostSettingsRowProps): ReactElement | null {
+export function BoostSettingsRow({ form, t }: BoostSettingsRowProps): ReactElement | null {
   const copy = (key: BoostKey): string => t?.(key) ?? key
   const [draft, setDraft] = useState<Preset[] | null>(null)
 
@@ -63,14 +66,6 @@ export function BoostSettingsRow({ view, form, t }: BoostSettingsRowProps): Reac
   const state = form.state
   const presets = draft ?? state.value?.presets ?? []
 
-  if (view === 'summary') {
-    return <span>{copy('settings.summary').replace('{count}', String(presets.length))}</span>
-  }
-  // A row with no config entry yet still gets a usable page: the list starts
-  // empty and the first write creates the namespace field. Blocking here left
-  // a fresh install with a hint and no controls.
-  if (state.status === 'loading') return <p className="dsh-boost-settings-hint">{copy('settings.hint')}</p>
-
   /** Persist one list and adopt it locally. */
   const commit = (next: Preset[]): void => {
     setDraft(next)
@@ -80,58 +75,63 @@ export function BoostSettingsRow({ view, form, t }: BoostSettingsRowProps): Reac
   const edit = (index: number, field: keyof Preset, value: string): void => {
     setDraft(presets.map((preset, at) => at === index ? { ...preset, [field]: value } : preset))
   }
-  const disabled = !state.writable
+  const disabled = !state.writable || state.status === 'loading'
 
   return (
     <div className="dsh-boost-settings">
-      <p className="dsh-boost-settings-hint">{copy('settings.hint')}</p>
-      {presets.length === 0 && <p className="dsh-boost-settings-hint">{copy('settings.empty')}</p>}
+      <h2 className="dsh-boost-settings-title">{copy('nav')}</h2>
+      <p className="dsh-boost-settings-intro">{copy('settings.hint')}</p>
+      {presets.length === 0 && <p className="dsh-boost-settings-empty">{copy('settings.empty')}</p>}
       {presets.map((preset, index) => (
-        <div className="dsh-boost-settings-row" key={index}>
+        <div className="dsh-boost-preset" key={index}>
           <input
-            className="dsh-boost-settings-input"
-            style={{ width: 120 }}
+            className="dsh-boost-input"
             value={preset.label}
             placeholder={copy('settings.label')}
+            aria-label={copy('settings.label')}
             disabled={disabled}
             onChange={event => { edit(index, 'label', event.target.value) }}
             onBlur={() => { commit(presets) }}
           />
           <input
-            className="dsh-boost-settings-input"
+            className="dsh-boost-input"
             value={preset.prompt}
             placeholder={copy('settings.prompt')}
+            aria-label={copy('settings.prompt')}
             disabled={disabled}
             onChange={event => { edit(index, 'prompt', event.target.value) }}
             onBlur={() => { commit(presets) }}
           />
           <button
             type="button"
-            className="dsh-boost-settings-button"
+            className="dsh-boost-settings-trash"
+            aria-label={copy('settings.remove')}
+            title={copy('settings.remove')}
             disabled={disabled}
             onClick={() => { commit(presets.filter((_, at) => at !== index)) }}
           >
-            {copy('settings.remove')}
+            <IconTrashOutlineRegular />
           </button>
         </div>
       ))}
-      <div className="dsh-boost-settings-row">
-        <button
-          type="button"
-          className="dsh-boost-settings-button"
+      <div className="dsh-boost-settings-actions">
+        <Button
+          variant="outline"
+          size="sm"
+          icon={<IconPlusOutlineRegular />}
           disabled={disabled}
           onClick={() => { commit([...presets, { label: '', prompt: '' }]) }}
         >
           {copy('settings.add')}
-        </button>
-        <button
-          type="button"
-          className="dsh-boost-settings-button"
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
           disabled={disabled || presets.length === 0}
           onClick={() => { commit([]) }}
         >
           {copy('settings.reset')}
-        </button>
+        </Button>
       </div>
     </div>
   )

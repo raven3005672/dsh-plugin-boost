@@ -491,4 +491,84 @@ body[data-ds-dark-theme] .dsh-boost-more:hover {
   filter: brightness(1.05);
 }
 
+
+/* Settings section. Mirrors the shell's settings pages: 18px heading, 13px
+   intro, hairline rows, 32px inputs and primitive buttons. */
+.dsh-boost-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 760px;
+  color: var(--dsw-alias-label-primary, #1f2328);
+}
+.dsh-boost-settings-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+.dsh-boost-settings-intro,
+.dsh-boost-settings-empty {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--dsw-alias-label-tertiary, #9aa0a6);
+}
+.dsh-boost-preset {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2.2fr) auto;
+  align-items: center;
+  gap: 6px;
+  border: 0.5px solid var(--dsw-alias-border-l4, rgba(0, 0, 0, 0.15));
+  border-radius: var(--dsw-radius-lg, 12px);
+  padding: 6px;
+}
+.dsh-boost-input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  border: 0.5px solid var(--dsw-alias-border-l4, rgba(0, 0, 0, 0.15));
+  border-radius: var(--dsw-radius-md, 10px);
+  font: inherit;
+  font-size: 14px;
+  line-height: 22px;
+  background: var(--dsw-alias-bg-layer-1, #ffffff);
+  color: var(--dsw-alias-label-primary, #1f2328);
+}
+.dsh-boost-input:focus {
+  outline: none;
+  border-color: var(--dsw-alias-state-business-primary, #2563eb);
+}
+.dsh-boost-input::placeholder {
+  color: var(--dsw-alias-label-dimmed, #b6bcc6);
+}
+.dsh-boost-input:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.dsh-boost-settings-trash {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--dsw-radius-sm, 8px);
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary, #9aa0a6);
+  cursor: pointer;
+}
+.dsh-boost-settings-trash:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover-danger, rgba(220, 38, 38, 0.08));
+  color: var(--dsw-alias-state-error-primary, #dc2626);
+}
+.dsh-boost-settings-trash:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+.dsh-boost-settings-actions {
+  display: flex;
+  gap: 8px;
+}
 `

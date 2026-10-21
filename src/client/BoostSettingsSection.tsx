@@ -48,7 +48,6 @@ export function BoostSettingsSection({ t, form }: BoostSettingsSectionProps): Re
 
   return (
     <BoostSettingsRow
-      view="page"
       t={t}
       form={{ state, mutate: (ops, revision) => form.mutate(ops, revision) }}
     />
