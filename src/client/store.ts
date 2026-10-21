@@ -26,6 +26,8 @@ export type ListFilter = AnnotationKind | 'all'
 export interface BoostSnapshot {
   /** Session currently displayed, absent before the first binding. */
   readonly sessionId: string | undefined
+  /** Bumped whenever the conversation the store points at changes. */
+  readonly viewEpoch: number
   /** Annotations of the current session, newest last. */
   readonly annotations: readonly Annotation[]
   /** Locating outcome per annotation id. */
@@ -110,6 +112,7 @@ function writeStored(sessionId: string, list: readonly Annotation[]): void {
 
 /** Owner of every annotation-related fact the UI reads. */
 export class BoostStore {
+  private viewEpoch = 0
   private sessionId: string | undefined
   private annotations: Annotation[] = []
   private statuses = new Map<string, ResolveStatus>()
@@ -123,6 +126,7 @@ export class BoostStore {
   private signature = ''
   private snapshot: BoostSnapshot = {
     sessionId: undefined,
+    viewEpoch: 0,
     annotations: [],
     statuses: new Map(),
     panelOpen: false,
@@ -142,11 +146,26 @@ export class BoostStore {
     this.input = input
     if (this.sessionId === sessionId) return
     clear()
+    this.viewEpoch += 1
+    // Leaving a conversation also dismisses its annotation column: the list
+    // describes the text that is no longer on screen.
+    this.panelOpen = false
     this.sessionId = sessionId
     this.annotations = readStored(sessionId)
     this.activeId = undefined
     this.statuses = new Map()
     this.refresh()
+  }
+
+  /**
+   * Called when the conversation view unmounts: dismiss the panel and the
+   * transient surfaces that belong to it.
+   */
+  leaveConversation(): void {
+    if (this.sessionId === undefined) return
+    this.viewEpoch += 1
+    this.panelOpen = false
+    this.publish()
   }
 
   /** Drop highlights and listeners; used when the plugin's fiber disposes. */
@@ -405,6 +424,7 @@ export class BoostStore {
   private publish(): void {
     this.snapshot = {
       sessionId: this.sessionId,
+      viewEpoch: this.viewEpoch,
       annotations: this.annotations,
       statuses: this.statuses,
       panelOpen: this.panelOpen,

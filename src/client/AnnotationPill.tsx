@@ -41,6 +41,10 @@ export function AnnotationPill({ store, t, sessionId, inputActions, draft, phase
     store.bind(sessionId, { draft, phase, occurrences, actions: inputActions })
   }, [store, sessionId, draft, phase, occurrences, inputActions])
 
+  // The pill only exists inside a conversation; its removal means the user
+  // left that conversation (or switched to another one).
+  useEffect(() => () => { store.leaveConversation() }, [store])
+
   // The pill counts actionable notes only: plain marks are not a queue.
   const count = snapshot.sessionId === sessionId
     ? snapshot.annotations.filter(annotation => annotation.kind === 'quote').length

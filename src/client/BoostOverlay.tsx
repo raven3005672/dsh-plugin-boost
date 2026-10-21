@@ -149,6 +149,13 @@ export function BoostOverlay({ store, t }: BoostOverlayProps) {
     }
   }, [store, t])
 
+  // A different conversation must not inherit an open menu or composer.
+  useEffect(() => {
+    setMenu(null)
+    setComposer(null)
+    setNote('')
+  }, [snapshot.viewEpoch])
+
   useEffect(() => {
     if (!supported()) console.warn('dsh-plugin-boost: CSS Custom Highlight API unavailable')
   }, [store, t])
