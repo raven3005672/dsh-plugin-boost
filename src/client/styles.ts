@@ -217,10 +217,10 @@ body[data-ds-dark-theme] .dsh-boost-quote[data-kind='mark'] {
   background: color-mix(in srgb, #ffc400 34%, transparent);
   border-radius: 3px;
   padding: 0 2px;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
+  display: block;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 .dsh-boost-note-row {
   display: flex;
@@ -356,6 +356,49 @@ body[data-ds-dark-theme] .dsh-boost-icon-button:hover {
 body[data-ds-dark-theme] .dsh-boost-action:hover {
   background: rgba(255, 255, 255, 0.1);
 }
+/* Same shape as the app's open-with control: one hairline pill, a main
+   action and a narrow chevron half split by a hairline. */
+.dsh-boost-split {
+  display: inline-flex;
+  align-items: stretch;
+  box-sizing: border-box;
+  height: 24px;
+  overflow: hidden;
+  border: 0.5px solid var(--dsw-alias-border-l4, rgba(0, 0, 0, 0.15));
+  border-radius: var(--dsw-radius-sm, 8px);
+}
+.dsh-boost-split-main,
+.dsh-boost-split-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: none;
+  color: var(--dsw-alias-label-primary, #1f2328);
+  font: inherit;
+  font-size: 11px;
+  line-height: 16px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.dsh-boost-split-main {
+  gap: 4px;
+  padding: 3px 5px;
+}
+.dsh-boost-split-chevron {
+  padding: 3px 4px 3px 3px;
+  border-left: 0.5px solid var(--dsw-alias-border-l4, rgba(0, 0, 0, 0.15));
+  color: var(--dsw-alias-label-secondary, #6b7280);
+}
+.dsh-boost-split-main:hover,
+.dsh-boost-split-chevron:hover,
+.dsh-boost-split-chevron[aria-expanded='true'] {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(0, 0, 0, 0.05));
+}
+.dsh-boost-split-slot {
+  display: inline-flex;
+}
+
 .dsh-boost-more-slot {
   margin-left: auto;
   display: inline-flex;

@@ -7,7 +7,7 @@
  * triggers and the content.
  */
 import { useEffect, useLayoutEffect, useState } from 'react'
-import { Menu } from '@deepseek-ai/dsh-client-ui-primitives'
+import { IconChevronDownOutlineRegular, Menu } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { MenuEntry } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { Annotation, Preset } from './contract.ts'
 import type { BoostTranslate } from './locales.ts'
@@ -274,34 +274,47 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
                   </button>
                 )}
                 {annotation.kind === 'quote' && (
-                  <Menu
-                    open={presetFor === annotation.id}
-                    align="start"
-                    compact
-                    portal
-                    items={presetItems}
-                    onSelect={(id) => {
-                      const preset = presets[Number(id.slice(1))]
-                      if (preset !== undefined) handOff(annotation, preset.prompt)
-                      setPresetFor(null)
-                    }}
-                    onClose={() => { setPresetFor(null) }}
-                    anchor={(
-                      <button
-                        type="button"
-                        className="dsh-boost-action"
-                        aria-haspopup="menu"
-                        aria-expanded={presetFor === annotation.id}
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          setPresetFor(current => current === annotation.id ? null : annotation.id)
-                        }}
-                      >
-                        {primaryPreset?.label ?? t('item.explain')}
-                        <Chevron />
-                      </button>
-                    )}
-                  />
+                  <span className="dsh-boost-split">
+                    <button
+                      type="button"
+                      className="dsh-boost-split-main"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        if (primaryPreset !== undefined) handOff(annotation, primaryPreset.prompt)
+                      }}
+                    >
+                      {primaryPreset?.label ?? t('item.explain')}
+                    </button>
+                    <Menu
+                      className="dsh-boost-split-slot"
+                      open={presetFor === annotation.id}
+                      align="start"
+                      compact
+                      portal
+                      items={presetItems}
+                      onSelect={(id) => {
+                        const preset = presets[Number(id.slice(1))]
+                        if (preset !== undefined) handOff(annotation, preset.prompt)
+                        setPresetFor(null)
+                      }}
+                      onClose={() => { setPresetFor(null) }}
+                      anchor={(
+                        <button
+                          type="button"
+                          className="dsh-boost-split-chevron"
+                          aria-label={t('item.morePresets')}
+                          aria-haspopup="menu"
+                          aria-expanded={presetFor === annotation.id}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            setPresetFor(current => current === annotation.id ? null : annotation.id)
+                          }}
+                        >
+                          <IconChevronDownOutlineRegular />
+                        </button>
+                      )}
+                    />
+                  </span>
                 )}
                 <Menu
                   className="dsh-boost-more-slot"
