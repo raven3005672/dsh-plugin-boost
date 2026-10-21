@@ -35,6 +35,14 @@ html[data-dsh-boost-shift] [data-conversation-scroll] {
   transition: padding-right 180ms ease;
 }
 
+/* The transcript's own width handles are anchored to the scroll box, not to
+   the column: once the panel shifts the text left they float in the gap and
+   read as a stray drag strip beside the card. Suppressed only while the panel
+   is open, and restored the moment it closes. */
+html[data-dsh-boost-shift] [class*='widthHandle'] {
+  display: none;
+}
+
 /* Matches the shipped statistics pills: 22px tall, 12px muted text, no
    border, 8px radius, transparent until hover. */
 .dsh-boost-pill {
