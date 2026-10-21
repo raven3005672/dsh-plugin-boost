@@ -8,6 +8,14 @@
  */
 export type AnnotationKind = 'quote' | 'mark'
 
+/** One user-defined shortcut: the button label and the line it writes. */
+export interface Preset {
+  /** Button text. */
+  readonly label: string
+  /** Instruction line prepended to the excerpt. */
+  readonly prompt: string
+}
+
 /** One stored annotation: a character range inside one message of one session. */
 export interface Annotation {
   /** Stable local id, unique within the browser. */

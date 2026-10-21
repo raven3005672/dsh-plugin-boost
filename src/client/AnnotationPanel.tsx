@@ -7,7 +7,7 @@
  * card never blocks the conversation underneath.
  */
 import { useEffect, useLayoutEffect, useState } from 'react'
-import type { Annotation } from './contract.ts'
+import type { Annotation, Preset } from './contract.ts'
 import type { BoostTranslate } from './locales.ts'
 import type { BoostStore } from './store.ts'
 import { useBoost } from './useBoost.ts'
@@ -47,21 +47,21 @@ function composeText(t: BoostTranslate, annotation: Annotation, lead: string): s
  */
 export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
   const snapshot = useBoost(store)
-  const [overflow, setOverflow] = useState<{ id: string; x: number; y: number } | null>(null)
+  const [menu, setMenu] = useState<{ id: string; x: number; y: number; kind: 'overflow' | 'presets' } | null>(null)
   const [editing, setEditing] = useState<{ id: string; text: string } | null>(null)
   const [box, setBox] = useState<{ top: number; maxHeight: number } | null>(null)
 
   useEffect(() => {
-    if (overflow === null) return
+    if (menu === null) return
     /** Close the overflow menu on any press outside it. */
     const close = (event: MouseEvent): void => {
       const target = event.target
       if (target instanceof Element && target.closest('[data-boost-overflow]') !== null) return
-      setOverflow(null)
+      setMenu(null)
     }
     document.addEventListener('mousedown', close, true)
     return () => document.removeEventListener('mousedown', close, true)
-  }, [overflow])
+  }, [menu])
 
   // Keep the card between the transcript's top edge (below the header rule)
   // and the composer card's bottom border, so it never covers either rule and
@@ -92,6 +92,15 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
 
   if (!snapshot.panelOpen) return null
 
+  // Configured shortcuts win; an empty config means the built-in, localized set.
+  const presets: readonly Preset[] = snapshot.presets.length > 0
+    ? snapshot.presets
+    : [
+        { label: t('preset.explain'), prompt: t('preset.explainPrompt') },
+        { label: t('preset.expand'), prompt: t('preset.expandPrompt') },
+        { label: t('preset.disagree'), prompt: t('preset.disagreePrompt') },
+      ]
+  const primaryPreset = presets[0]
   const quotes = snapshot.annotations.filter(annotation => annotation.kind === 'quote').length
   const marks = snapshot.annotations.length - quotes
   const visible = snapshot.annotations.filter(annotation =>
@@ -204,9 +213,18 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
                     <button
                       type="button"
                       className="dsh-boost-action"
-                      onClick={(event) => { event.stopPropagation(); handOff(annotation, t('lead.explain')) }}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        const rect = event.currentTarget.getBoundingClientRect()
+                        setMenu({
+                          id: annotation.id,
+                          kind: 'presets',
+                          x: Math.min(rect.left, window.innerWidth - 180),
+                          y: rect.bottom + 4,
+                        })
+                      }}
                     >
-                      {t('item.explain')}
+                      {`${primaryPreset?.label ?? t('item.explain')} ▾`}
                     </button>
                     <button
                       type="button"
@@ -224,8 +242,9 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
                   onClick={(event) => {
                     event.stopPropagation()
                     const rect = event.currentTarget.getBoundingClientRect()
-                    setOverflow({
+                    setMenu({
                       id: annotation.id,
+                      kind: 'overflow',
                       x: Math.min(rect.right - 148, window.innerWidth - 160),
                       y: rect.bottom + 4,
                     })
@@ -238,36 +257,53 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
           )
         })}
       </ul>
-      {overflow !== null && (() => {
-        const target = snapshot.annotations.find(annotation => annotation.id === overflow.id)
+      {menu !== null && (() => {
+        const target = snapshot.annotations.find(annotation => annotation.id === menu.id)
         if (target === undefined) return null
         return (
           <div
             className="dsh-boost-overflow"
             data-dsh-boost=""
             data-boost-overflow=""
-            style={{ left: overflow.x, top: overflow.y }}
+            style={{ left: menu.x, top: menu.y }}
           >
-            <button
-              type="button"
-              onClick={() => {
-                store.toggleKind(target.id)
-                setOverflow(null)
-              }}
-            >
-              {target.kind === 'quote' ? t('item.toMark') : t('item.toQuote')}
-            </button>
-            <button
-              type="button"
-              data-tone="danger"
-              onClick={() => {
-                store.remove(target.id)
-                store.notify(t('notice.deleted'))
-                setOverflow(null)
-              }}
-            >
-              {t('item.delete')}
-            </button>
+            {menu.kind === 'presets'
+              ? presets.map((preset, index) => (
+                <button
+                  key={`${preset.label}-${index}`}
+                  type="button"
+                  onClick={() => {
+                    handOff(target, preset.prompt)
+                    setMenu(null)
+                  }}
+                >
+                  {preset.label}
+                </button>
+              ))
+              : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      store.toggleKind(target.id)
+                      setMenu(null)
+                    }}
+                  >
+                    {target.kind === 'quote' ? t('item.toMark') : t('item.toQuote')}
+                  </button>
+                  <button
+                    type="button"
+                    data-tone="danger"
+                    onClick={() => {
+                      store.remove(target.id)
+                      store.notify(t('notice.deleted'))
+                      setMenu(null)
+                    }}
+                  >
+                    {t('item.delete')}
+                  </button>
+                </>
+              )}
           </div>
         )
       })()}

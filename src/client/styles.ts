@@ -440,6 +440,51 @@ body[data-ds-dark-theme] .dsh-boost-quote[data-kind='mark'] {
   background: var(--dsw-alias-button-primary-hover, var(--dsw-alias-button-primary-fill, #2563eb));
   filter: brightness(1.05);
 }
+.dsh-boost-settings {
+  display: grid;
+  gap: 8px;
+  max-width: 560px;
+}
+.dsh-boost-settings-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--dsw-alias-label-secondary, #6b7280);
+}
+.dsh-boost-settings-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dsh-boost-settings-input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--dsw-alias-border-l2, #e5e7eb);
+  background: var(--dsw-alias-bg-layer-2, #ffffff);
+  color: var(--dsw-alias-label-primary, #1f2328);
+}
+.dsh-boost-settings-button {
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--dsw-alias-border-l2, #e5e7eb);
+  background: transparent;
+  color: var(--dsw-alias-label-primary, #1f2328);
+  cursor: pointer;
+}
+.dsh-boost-settings-button:hover:not(:disabled) {
+  border-color: var(--dsw-alias-brand-primary, #2563eb);
+}
+.dsh-boost-settings-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .dsh-boost-toast {
   position: fixed;
   left: 50%;

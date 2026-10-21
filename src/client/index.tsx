@@ -11,11 +11,14 @@ import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
+import type {} from '@deepseek-ai/dsh-client-ui-plugin-manager/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-session/client'
 import type { PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import { AnnotationPill } from './AnnotationPill.tsx'
 import { BoostOverlay } from './BoostOverlay.tsx'
+import { BoostSettingsRow } from './BoostSettingsRow.tsx'
+import type { Preset } from './contract.ts'
 import { en, zh, type BoostKey } from './locales.ts'
 import { BoostStore } from './store.ts'
 import { STYLES } from './styles.ts'
@@ -28,6 +31,17 @@ export const inject = ['slots', 'locale']
 
 /** Copy namespace this plugin owns. */
 const LOCALE_NS = 'boost'
+
+/** Settings namespace this plugin owns: the row id in the profile patch. */
+const SETTINGS_NAMESPACE = 'dsh-plugin-boost'
+
+/** The slice of the settings service used to read the preset list. */
+interface ConfigFormsLike {
+  get(id: string): {
+    getSnapshot(): { value?: { presets?: Preset[] } }
+    subscribe(listener: () => void): () => void
+  }
+}
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
@@ -60,6 +74,20 @@ export function apply(ctx: Context): void {
   })
 
   ctx.effect(() => () => { store.dispose() })
+
+  // Configured shortcuts reach the panel through the store; an absent service
+  // (or an empty list) leaves the built-in, localized set in place.
+  ctx.effect(() => {
+    const forms = ctx.get('configForms') as ConfigFormsLike | undefined
+    if (forms === undefined) return () => {}
+    const form = forms.get(SETTINGS_NAMESPACE)
+    const sync = (): void => { store.setPresets(form.getSnapshot().value?.presets ?? []) }
+    // Subscribe before the first read: a change landing between the two would
+    // otherwise be lost.
+    const unsubscribe = form.subscribe(sync)
+    sync()
+    return () => { unsubscribe() }
+  })
 
   /**
    * Dock entry: binds the store to the session and the composer's actions.
@@ -101,4 +129,10 @@ export function apply(ctx: Context): void {
     { name: 'shell.overlay', id: 'boost.overlay', locale: LOCALE_NS },
     Overlay,
   ))
+
+  ctx.slots.inject('plugins.row.config', () => ctx.slots.register({
+    name: 'plugins.row.config',
+    key: `${SETTINGS_NAMESPACE}#${SETTINGS_NAMESPACE}`,
+    locale: LOCALE_NS,
+  }, BoostSettingsRow))
 }

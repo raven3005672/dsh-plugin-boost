@@ -6,7 +6,7 @@
  * annotations of the conversation in front of the user. Nothing here reaches
  * the Session log — storage is the browser's own localStorage.
  */
-import type { Annotation, AnnotationKind, InputActionsLike, ResolveStatus, TextModel } from './contract.ts'
+import type { Annotation, AnnotationKind, InputActionsLike, Preset, ResolveStatus, TextModel } from './contract.ts'
 import { locate } from './anchor.ts'
 import { clear, paint } from './highlights.ts'
 
@@ -43,6 +43,8 @@ export interface BoostSnapshot {
   readonly diagnostics: boolean
   /** Which kinds the list currently shows. */
   readonly filter: ListFilter
+  /** User shortcuts from the settings row; empty means "use the built-ins". */
+  readonly presets: readonly Preset[]
   /** Monotonic revision; identity changes on every notify. */
   readonly revision: number
 }
@@ -120,6 +122,7 @@ export class BoostStore {
   private notice: string | undefined
   private diagnostics = false
   private filter: ListFilter = 'quote'
+  private presets: Preset[] = []
   private input: InputFacts = { draft: '', phase: 'plain', occurrences: 0, actions: undefined }
   private listeners = new Set<() => void>()
   private noticeTimer = 0
@@ -133,6 +136,7 @@ export class BoostStore {
     notice: undefined,
     diagnostics: false,
     filter: 'quote',
+    presets: [],
     revision: 0,
   }
 
@@ -313,6 +317,15 @@ export class BoostStore {
   }
 
   /**
+   * Replace the shortcut list with the settings row's current value.
+   * @param presets - configured presets; an empty list selects the built-ins.
+   */
+  setPresets(presets: readonly Preset[]): void {
+    this.presets = presets.filter(preset => preset.label.trim() !== '' || preset.prompt.trim() !== '')
+    this.publish()
+  }
+
+  /**
    * Choose which kinds the list shows and remember it for this browser.
    * @param filter - target view.
    */
@@ -421,6 +434,7 @@ export class BoostStore {
       notice: this.notice,
       diagnostics: this.diagnostics,
       filter: this.filter,
+      presets: this.presets,
       revision: this.snapshot.revision + 1,
     }
     for (const listener of this.listeners) listener()

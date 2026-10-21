@@ -48,7 +48,7 @@ plugin.apply({
   effect: execute => { calls.push('effect'); return execute() },
   slots: {
     inject: (slot, factory) => { calls.push(`inject:${slot}`); return factory() },
-    register: (options) => { calls.push(`register:${options.name}#${options.id}`); return () => {} },
+    register: (options) => { calls.push(`register:${options.name}#${options.key ?? options.id}`); return () => {} },
   },
 })
 
@@ -56,6 +56,7 @@ assert.ok(calls.includes('inject:conversation.composer.dock'), 'must wait on the
 assert.ok(calls.includes('register:conversation.composer.dock#boost.annotations'), 'must add the dock pill')
 assert.ok(calls.includes('inject:shell.overlay'), 'must wait on the shell overlay')
 assert.ok(calls.includes('register:shell.overlay#boost.overlay'), 'must render the overlay surfaces')
+assert.ok(calls.includes('register:plugins.row.config#dsh-plugin-boost#dsh-plugin-boost'), 'must offer the settings row')
 assert.ok(calls.some(call => call.startsWith('locale:boost:')), 'must register its dictionaries')
 
 console.log(`ok ${pkg.name}: ${calls.join(' | ')}`)
