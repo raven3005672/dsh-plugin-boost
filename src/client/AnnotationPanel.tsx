@@ -51,6 +51,9 @@ function PencilIcon(): React.ReactElement {
   )
 }
 
+/** Card width, mirrored in the stylesheet; the transcript gives up width + 24. */
+const PANEL_WIDTH = 240
+
 /** Disclosure chevron shared by the two trigger buttons. */
 function Chevron(): React.ReactElement {
   return (
@@ -96,11 +99,18 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
       const right = scrollBox === null
         ? 12
         : Math.max(12, Math.round(window.innerWidth - scrollBox.right + 10))
-      // The shift the panel applies to the transcript shrinks with it: a
-      // sidebar-open column cannot spare a fixed 312px without collapsing the
-      // text, so it gives up only what keeps a readable measure.
+      // The transcript column is centred inside the scroll box, so padding of
+      // S moves its right edge by only S/2. Solve for the S that lands the text
+      // GAP pixels before the card instead of guessing a constant: the guess
+      // left ~90px of dead space at full width.
       if (scrollBox !== null) {
-        const shift = scrollBox.width >= 760 ? 312 : Math.max(0, Math.min(312, Math.round(scrollBox.width - 320)))
+        const column = document.querySelector('[data-chat-flow]')
+        const columnWidth = column === null ? 0 : column.getBoundingClientRect().width
+        const gap = 14
+        const wanted = Math.round(-scrollBox.width + columnWidth + 20 + 2 * (PANEL_WIDTH + gap))
+        const shift = columnWidth <= 0
+          ? PANEL_WIDTH + 24
+          : Math.max(0, Math.min(PANEL_WIDTH + 24, wanted))
         document.documentElement.style.setProperty('--dsh-boost-shift', `${shift}px`)
       }
       setBox({ top, maxHeight: Math.max(160, limit - top), right })
