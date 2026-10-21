@@ -87,6 +87,12 @@ boost/annotations/<workspaceId>/<sessionId>   →  该会话的标注数组
 
 **D11 配色。** 统一高亮 + active，还是按标签配色（`::highlight()` 只支持静态名）。
 
+**D15 面板打开时回合定位器隐藏：接受。**
+`TurnNavigator` 在对话区宽度低于约 960px 时用容器查询隐藏自己（`ui-chat/TurnNavigator.module.css`）。
+我们的浮层靠 `padding-right: 336px` 让位，必然把宽度压到断点以下，所以面板开着时定位器消失、关掉即恢复。
+不做左侧面板或底部抽屉改造：DSH 自带的右侧边栏展开时同样会隐藏定位器（实测对话区 993 → 417，定位器消失），
+当前行为与官方取舍一致。
+
 ## 暂缓
 
 **可停靠列。** 需要在 `ui-layout` 新增 `shell.rightdock` 槽位（改 `AppFrame` 的宽度模型 + 声明 + 测试 + 文档）。插件侧用 `ctx.slots.inject('shell.rightdock', ...)` 预留，槽位不存在时静默不激活，上游合并后自动生效。
