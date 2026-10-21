@@ -6,7 +6,7 @@
  * click-through; a direct child re-enables pointer events for itself, so the
  * card never blocks the conversation underneath.
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useState } from 'react'
 import type { Annotation } from './contract.ts'
 import type { BoostTranslate } from './locales.ts'
 import type { BoostStore } from './store.ts'
@@ -49,6 +49,7 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
   const snapshot = useBoost(store)
   const [overflow, setOverflow] = useState<{ id: string; x: number; y: number } | null>(null)
   const [editing, setEditing] = useState<{ id: string; text: string } | null>(null)
+  const [box, setBox] = useState<{ top: number; maxHeight: number } | null>(null)
 
   useEffect(() => {
     if (overflow === null) return
@@ -61,6 +62,33 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
     document.addEventListener('mousedown', close, true)
     return () => document.removeEventListener('mousedown', close, true)
   }, [overflow])
+
+  // Keep the card between the transcript's top edge (below the header rule)
+  // and the composer card's bottom border, so it never covers either rule and
+  // never runs past the input box.
+  useLayoutEffect(() => {
+    if (!snapshot.panelOpen) {
+      setBox(null)
+      return
+    }
+    /** Re-measure the two anchors the card is allowed to occupy. */
+    const measure = (): void => {
+      const scroll = document.querySelector('[data-conversation-scroll]')
+      const card = document.querySelector('[data-composer-card]')
+      const top = scroll === null ? 84 : Math.round(scroll.getBoundingClientRect().top + 8)
+      const limit = card === null ? window.innerHeight - 96 : Math.round(card.getBoundingClientRect().bottom - 8)
+      setBox({ top, maxHeight: Math.max(160, limit - top) })
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    const card = document.querySelector('[data-composer-card]')
+    const observer = card === null ? null : new ResizeObserver(measure)
+    if (card !== null && observer !== null) observer.observe(card)
+    return () => {
+      window.removeEventListener('resize', measure)
+      observer?.disconnect()
+    }
+  }, [snapshot.panelOpen])
 
   if (!snapshot.panelOpen) return null
 
@@ -81,7 +109,13 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
   }
 
   return (
-    <section className="dsh-boost-panel" data-dsh-boost="" role="dialog" aria-label={t('panel.title')}>
+    <section
+      className="dsh-boost-panel"
+      data-dsh-boost=""
+      role="dialog"
+      aria-label={t('panel.title')}
+      style={box === null ? undefined : { top: box.top, maxHeight: box.maxHeight }}
+    >
       <header className="dsh-boost-panel-head">
         <span className="dsh-boost-panel-title">
           {t('panel.title')} · {t('panel.count', { count: visible.length })}
