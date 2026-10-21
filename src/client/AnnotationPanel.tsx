@@ -265,45 +265,46 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
               )}
               <div className="dsh-boost-actions">
                 {annotation.kind === 'quote' && (
-                  <>
-                    <Menu
-                      open={presetFor === annotation.id}
-                      align="start"
-                      compact
-                      portal
-                      items={presetItems}
-                      onSelect={(id) => {
-                        const preset = presets[Number(id.slice(1))]
-                        if (preset !== undefined) handOff(annotation, preset.prompt)
-                        setPresetFor(null)
-                      }}
-                      onClose={() => { setPresetFor(null) }}
-                      anchor={(
-                        <button
-                          type="button"
-                          className="dsh-boost-action"
-                          aria-haspopup="menu"
-                          aria-expanded={presetFor === annotation.id}
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            setPresetFor(current => current === annotation.id ? null : annotation.id)
-                          }}
-                        >
-                          {primaryPreset?.label ?? t('item.explain')}
-                          <Chevron />
-                        </button>
-                      )}
-                    />
-                    <button
-                      type="button"
-                      className="dsh-boost-action"
-                      onClick={(event) => { event.stopPropagation(); handOff(annotation, t('lead.add')) }}
-                    >
-                      {t('item.add')}
-                    </button>
-                  </>
+                  <button
+                    type="button"
+                    className="dsh-boost-action"
+                    onClick={(event) => { event.stopPropagation(); handOff(annotation, t('lead.add')) }}
+                  >
+                    {t('item.add')}
+                  </button>
+                )}
+                {annotation.kind === 'quote' && (
+                  <Menu
+                    open={presetFor === annotation.id}
+                    align="start"
+                    compact
+                    portal
+                    items={presetItems}
+                    onSelect={(id) => {
+                      const preset = presets[Number(id.slice(1))]
+                      if (preset !== undefined) handOff(annotation, preset.prompt)
+                      setPresetFor(null)
+                    }}
+                    onClose={() => { setPresetFor(null) }}
+                    anchor={(
+                      <button
+                        type="button"
+                        className="dsh-boost-action"
+                        aria-haspopup="menu"
+                        aria-expanded={presetFor === annotation.id}
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          setPresetFor(current => current === annotation.id ? null : annotation.id)
+                        }}
+                      >
+                        {primaryPreset?.label ?? t('item.explain')}
+                        <Chevron />
+                      </button>
+                    )}
+                  />
                 )}
                 <Menu
+                  className="dsh-boost-more-slot"
                   open={overflowFor === annotation.id}
                   align="end"
                   compact

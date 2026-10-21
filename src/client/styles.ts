@@ -229,7 +229,7 @@ body[data-ds-dark-theme] .dsh-boost-quote[data-kind='mark'] {
 }
 .dsh-boost-note-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 6px;
   margin-top: 4px;
 }
@@ -247,11 +247,10 @@ body[data-ds-dark-theme] .dsh-boost-quote[data-kind='mark'] {
   cursor: pointer;
 }
 .dsh-boost-icon-button:hover {
-  background: var(--dsw-alias-bg-layer-3, rgba(0, 0, 0, 0.05));
+  background: color-mix(in srgb, var(--dsh-boost-accent, #b6bcc6) 18%, transparent);
   color: var(--dsw-alias-label-primary, #1f2328);
 }
 .dsh-boost-note {
-  margin-top: 4px;
   font-size: 12px;
   line-height: 1.6;
   color: var(--dsw-alias-label-secondary, #6b7280);
@@ -354,10 +353,13 @@ body[data-ds-dark-theme] .dsh-boost-quote[data-kind='mark'] {
   cursor: pointer;
 }
 .dsh-boost-action:hover {
-  background: var(--dsw-alias-bg-layer-3, rgba(0, 0, 0, 0.05));
+  background: color-mix(in srgb, var(--dsh-boost-accent, #b6bcc6) 16%, transparent);
+}
+.dsh-boost-more-slot {
+  margin-left: auto;
+  display: inline-flex;
 }
 .dsh-boost-more {
-  margin-left: auto;
   height: 24px;
   min-width: 24px;
   font: inherit;
@@ -371,7 +373,7 @@ body[data-ds-dark-theme] .dsh-boost-quote[data-kind='mark'] {
   cursor: pointer;
 }
 .dsh-boost-more:hover {
-  background: var(--dsw-alias-bg-layer-3, rgba(0, 0, 0, 0.05));
+  background: color-mix(in srgb, var(--dsh-boost-accent, #b6bcc6) 16%, transparent);
   color: var(--dsw-alias-label-primary, #1f2328);
 }
 
