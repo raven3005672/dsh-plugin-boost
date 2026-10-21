@@ -39,6 +39,16 @@ function composeText(t: BoostTranslate, annotation: Annotation, lead: string): s
   return blocks.join('\n')
 }
 
+/** Pencil glyph for the note-edit trigger. */
+function PencilIcon(): React.ReactElement {
+  return (
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false">
+      <path d="M4 20h5l2.5-2.5" />
+      <path d="M14.5 4.5l5 5L9 20H4v-5L14.5 4.5z" />
+    </svg>
+  )
+}
+
 /** Disclosure chevron shared by the two trigger buttons. */
 function Chevron(): React.ReactElement {
   return (
@@ -186,7 +196,6 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
               id: 'kind',
               label: annotation.kind === 'quote' ? t('item.toMark') : t('item.toQuote'),
             },
-            { id: 'edit', label: t('item.editNote') },
             { type: 'separator', id: 'sep' },
             { id: 'delete', label: t('item.delete'), danger: true },
           ]
@@ -229,7 +238,25 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
                     }}
                   />
                 )
-                : annotation.note.trim() !== '' && <div className="dsh-boost-note">{annotation.note}</div>}
+                : (
+                  <div className="dsh-boost-note-row">
+                    <button
+                      type="button"
+                      className="dsh-boost-icon-button"
+                      aria-label={t('item.editNote')}
+                      title={t('item.editNote')}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        setEditing({ id: annotation.id, text: annotation.note })
+                      }}
+                    >
+                      <PencilIcon />
+                    </button>
+                    <div className="dsh-boost-note" data-empty={annotation.note.trim() === '' ? 'true' : undefined}>
+                      {annotation.note.trim() === '' ? t('item.notePlaceholder') : annotation.note}
+                    </div>
+                  </div>
+                )}
               {snapshot.diagnostics && (
                 <div className="dsh-boost-meta">
                   <span className="dsh-boost-badge" data-status={status}>{status}</span>
@@ -262,7 +289,8 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
                             setPresetFor(current => current === annotation.id ? null : annotation.id)
                           }}
                         >
-                          {`${primaryPreset?.label ?? t('item.explain')} ▾`}
+                          {primaryPreset?.label ?? t('item.explain')}
+                          <Chevron />
                         </button>
                       )}
                     />
@@ -284,7 +312,6 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
                   onSelect={(id) => {
                     setOverflowFor(null)
                     if (id === 'kind') store.toggleKind(annotation.id)
-                    if (id === 'edit') setEditing({ id: annotation.id, text: annotation.note })
                     if (id === 'delete') {
                       store.remove(annotation.id)
                       store.notify(t('notice.deleted'))
