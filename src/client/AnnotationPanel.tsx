@@ -131,7 +131,6 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
     ? snapshot.presets
     : [
         { label: t('preset.explain'), prompt: t('preset.explainPrompt') },
-        { label: t('preset.expand'), prompt: t('preset.expandPrompt') },
         { label: t('preset.disagree'), prompt: t('preset.disagreePrompt') },
       ]
   const primaryPreset = presets[0]
