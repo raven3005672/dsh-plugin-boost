@@ -66,7 +66,10 @@ export function BoostSettingsRow({ view, form, t }: BoostSettingsRowProps): Reac
   if (view === 'summary') {
     return <span>{copy('settings.summary').replace('{count}', String(presets.length))}</span>
   }
-  if (state.value === undefined) return <p className="dsh-boost-settings-hint">{copy('settings.hint')}</p>
+  // A row with no config entry yet still gets a usable page: the list starts
+  // empty and the first write creates the namespace field. Blocking here left
+  // a fresh install with a hint and no controls.
+  if (state.status === 'loading') return <p className="dsh-boost-settings-hint">{copy('settings.hint')}</p>
 
   /** Persist one list and adopt it locally. */
   const commit = (next: Preset[]): void => {
