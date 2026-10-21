@@ -23,19 +23,21 @@ export interface AnnotationPanelProps {
 }
 
 /**
- * Compose the text an action drops into the composer.
+ * Compose the text an action drops into the composer: quote, then the note the
+ * user wrote about it, then the instruction to act on both. The quote comes
+ * first so every "this passage" that follows has an antecedent, and the
+ * instruction comes last because that is the operative ask.
  * @param t - localized copy.
  * @param annotation - source annotation.
- * @param lead - instruction line that opens the message.
- * @returns plain text with a quoted excerpt and the optional note.
+ * @param instruction - what to do with the excerpt; empty for a plain hand-off.
+ * @returns plain text blocks in reading order.
  */
-function composeText(t: BoostTranslate, annotation: Annotation, lead: string): string {
+function composeText(t: BoostTranslate, annotation: Annotation, instruction: string): string {
   const quoted = annotation.quote.split('\n').map(line => `> ${line}`).join('\n')
-  const blocks: string[] = []
-  if (lead !== '') blocks.push(lead)
-  blocks.push(quoted)
+  const blocks: string[] = [quoted]
   const note = annotation.note.trim()
   if (note !== '') blocks.push(`${t('note.label')}${note}`)
+  if (instruction !== '') blocks.push(instruction)
   return blocks.join('\n')
 }
 
@@ -149,10 +151,10 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
   /**
    * Push composed annotation text into the composer and report the outcome.
    * @param annotation - source annotation.
-   * @param lead - instruction line for this action.
+   * @param instruction - what to do with the excerpt; empty for a plain hand-off.
    */
-  const handOff = (annotation: Annotation, lead: string): void => {
-    store.insertText(composeText(t, annotation, lead))
+  const handOff = (annotation: Annotation, instruction: string): void => {
+    store.insertText(composeText(t, annotation, instruction))
   }
 
   return (
@@ -284,7 +286,7 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
                   <button
                     type="button"
                     className="dsh-boost-action"
-                    onClick={(event) => { event.stopPropagation(); handOff(annotation, t('lead.add')) }}
+                    onClick={(event) => { event.stopPropagation(); handOff(annotation, '') }}
                   >
                     {t('item.add')}
                   </button>
