@@ -242,8 +242,11 @@ body[data-ds-dark-theme] .dsh-boost-quote[data-kind='mark'] {
   cursor: pointer;
 }
 .dsh-boost-icon-button:hover {
-  background: color-mix(in srgb, var(--dsh-boost-accent, #b6bcc6) 12%, transparent);
+  background: rgba(38, 49, 72, 0.08);
   color: var(--dsw-alias-label-primary, #1f2328);
+}
+body[data-ds-dark-theme] .dsh-boost-icon-button:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 .dsh-boost-note {
   font-size: 12px;
@@ -348,7 +351,10 @@ body[data-ds-dark-theme] .dsh-boost-quote[data-kind='mark'] {
   cursor: pointer;
 }
 .dsh-boost-action:hover {
-  background: color-mix(in srgb, var(--dsh-boost-accent, #b6bcc6) 12%, transparent);
+  background: rgba(38, 49, 72, 0.08);
+}
+body[data-ds-dark-theme] .dsh-boost-action:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 .dsh-boost-more-slot {
   margin-left: auto;
@@ -368,8 +374,11 @@ body[data-ds-dark-theme] .dsh-boost-quote[data-kind='mark'] {
   cursor: pointer;
 }
 .dsh-boost-more:hover {
-  background: color-mix(in srgb, var(--dsh-boost-accent, #b6bcc6) 12%, transparent);
+  background: rgba(38, 49, 72, 0.08);
   color: var(--dsw-alias-label-primary, #1f2328);
+}
+body[data-ds-dark-theme] .dsh-boost-more:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .dsh-boost-menu {
