@@ -127,6 +127,53 @@ function commonSuffix(a: string, b: string): number {
 }
 
 /**
+ * Score every occurrence of a quote against the stored context.
+ *
+ * Kept free of the DOM so the rule that decides "exact / fuzzy / lost" can be
+ * tested without a browser: the offset hit is a slice comparison, and when it
+ * misses, the occurrence reproducing the most context wins.
+ * @param text - current plain text of the seat.
+ * @param quote - stored excerpt.
+ * @param prefix - up to 32 characters stored before it.
+ * @param suffix - up to 32 characters stored after it.
+ * @param start - stored offset, tried first.
+ * @returns the match, or null when nothing is trustworthy.
+ */
+export function resolveRange(
+  text: string,
+  quote: string,
+  prefix: string,
+  suffix: string,
+  start: number,
+): { offset: number; status: 'exact' | 'fuzzy' } | null {
+  const length = quote.length
+  if (length === 0) return null
+  if (text.slice(start, start + length) === quote) return { offset: start, status: 'exact' }
+
+  let best = -1
+  let bestScore = -1
+  let candidates = 0
+  for (let at = text.indexOf(quote); at !== -1; at = text.indexOf(quote, at + 1)) {
+    candidates += 1
+    const before = text.slice(Math.max(0, at - prefix.length), at)
+    const after = text.slice(at + length, at + length + suffix.length)
+    const score = commonSuffix(prefix, before) + commonPrefix(suffix, after)
+    if (score > bestScore) {
+      bestScore = score
+      best = at
+    }
+  }
+
+  const maximum = prefix.length + suffix.length
+  // With no context at all there is nothing to score: several occurrences then
+  // mean a genuine ambiguity, not a winner that happens to score zero.
+  if (best !== -1 && (candidates === 1 || (maximum > 0 && bestScore >= Math.min(6, maximum)))) {
+    return { offset: best, status: 'fuzzy' }
+  }
+  return null
+}
+
+/**
  * Locate one stored annotation in the current DOM.
  *
  * The offset hit is a single slice comparison. When it misses (the DOM was
@@ -151,32 +198,10 @@ export function locate(
     cache?.set(cacheKey, model)
   }
 
-  const length = annotation.quote.length
-  if (model.text.slice(annotation.start, annotation.start + length) === annotation.quote) {
-    const range = rangeOf(model, annotation.start, annotation.start + length)
-    return range === undefined ? { status: 'lost' } : { status: 'exact', range }
-  }
-
-  let best = -1
-  let bestScore = -1
-  let candidates = 0
-  for (let at = model.text.indexOf(annotation.quote); at !== -1; at = model.text.indexOf(annotation.quote, at + 1)) {
-    candidates += 1
-    const before = model.text.slice(Math.max(0, at - annotation.prefix.length), at)
-    const after = model.text.slice(at + length, at + length + annotation.suffix.length)
-    const score = commonSuffix(annotation.prefix, before) + commonPrefix(annotation.suffix, after)
-    if (score > bestScore) {
-      bestScore = score
-      best = at
-    }
-  }
-
-  const maximum = annotation.prefix.length + annotation.suffix.length
-  if (best !== -1 && (candidates === 1 || bestScore >= Math.min(6, maximum))) {
-    const range = rangeOf(model, best, best + length)
-    return range === undefined ? { status: 'lost' } : { status: 'fuzzy', range }
-  }
-  return { status: 'lost' }
+  const match = resolveRange(model.text, annotation.quote, annotation.prefix, annotation.suffix, annotation.start)
+  if (match === null) return { status: 'lost' }
+  const range = rangeOf(model, match.offset, match.offset + annotation.quote.length)
+  return range === undefined ? { status: 'lost' } : { status: match.status, range }
 }
 
 /**

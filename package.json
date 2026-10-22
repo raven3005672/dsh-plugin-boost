@@ -50,7 +50,9 @@
     "typecheck": "tsc -p tsconfig.json",
     "smoke": "node scripts/smoke.mjs",
     "prepack": "npm run build",
-    "prepublishOnly": "npm run typecheck && npm run smoke"
+    "prepublishOnly": "npm run typecheck && npm run smoke",
+    "test": "node scripts/test.mjs",
+    "verify": "pnpm typecheck && pnpm test && pnpm build && pnpm smoke"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "4.0.5",

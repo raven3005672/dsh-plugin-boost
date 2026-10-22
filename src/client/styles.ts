@@ -187,6 +187,12 @@ html[data-dsh-boost-shift] [class*='widthHandle'] {
 .dsh-boost-item:hover {
   background: rgba(38, 49, 72, 0.04);
 }
+.dsh-boost-item:focus-visible {
+  outline: none;
+  box-shadow:
+    0 1px 3px rgba(15, 17, 21, 0.09),
+    0 0 0 2px var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary, #2563eb));
+}
 .dsh-boost-item[data-active='true'] {
   background: rgba(38, 49, 72, 0.07);
   box-shadow:
@@ -318,6 +324,12 @@ body[data-ds-dark-theme] .dsh-boost-icon-button:hover {
   justify-content: flex-end;
   padding: 2px 8px;
   border-top: 1px solid var(--dsw-alias-border-l2, #e5e7eb);
+}
+.dsh-boost-foot-note {
+  margin-right: auto;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--dsw-alias-state-error-primary, #b91c1c);
 }
 .dsh-boost-foot-button {
   font: inherit;

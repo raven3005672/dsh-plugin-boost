@@ -63,8 +63,10 @@ dsh plugin --profile desktop add "file:$PWD"
 
 ```sh
 pnpm typecheck     # tsc
+pnpm test          # 锚点定位的回归用例（纯函数，无浏览器）
 pnpm build         # lib/index.js + lib/client.js
-pnpm smoke         # 无浏览器加载 bundle，断言两个插槽的注册
+pnpm smoke         # 无浏览器加载 bundle，断言三个插槽的注册
+pnpm verify        # 上面四步一次跑完
 ```
 
 本地起真实应用（在 deepseek-harness 仓库里）：

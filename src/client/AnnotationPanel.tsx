@@ -6,7 +6,7 @@
  * handling and dismissal match the rest of the app; this file only owns the
  * triggers and the content.
  */
-import { useEffect, useLayoutEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { IconChevronDownOutlineRegular, Menu } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { MenuEntry } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { Annotation, Preset } from './contract.ts'
@@ -75,6 +75,11 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
   const [overflowFor, setOverflowFor] = useState<string | null>(null)
   const [editing, setEditing] = useState<{ id: string; text: string } | null>(null)
   const [box, setBox] = useState<{ top: number; maxHeight: number; right: number } | null>(null)
+  // Only failures speak up, and inline: the hand-off succeeding is visible in
+  // the composer itself, but a refused write would otherwise look like a dead
+  // button.
+  const [failure, setFailure] = useState<string | null>(null)
+  const failureTimer = useRef(0)
 
   // Keep the card between the transcript's top edge (below the header rule)
   // and the composer's top edge, so it never covers the header rule and never
@@ -128,6 +133,8 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
     }
   }, [snapshot.panelOpen])
 
+  useEffect(() => () => { window.clearTimeout(failureTimer.current) }, [])
+
   useEffect(() => {
     if (snapshot.panelOpen) return
     setFilterOpen(false)
@@ -164,7 +171,11 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
    * @param instruction - what to do with the excerpt; empty for a plain hand-off.
    */
   const handOff = (annotation: Annotation, instruction: string): void => {
-    store.insertText(composeText(t, annotation, instruction))
+    const result = store.insertText(composeText(t, annotation, instruction))
+    if (result === 'ok') return
+    window.clearTimeout(failureTimer.current)
+    setFailure(result === 'busy' ? t('notice.busy') : t('notice.failed'))
+    failureTimer.current = window.setTimeout(() => { setFailure(null) }, 3200)
   }
 
   return (
@@ -173,6 +184,12 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
       data-dsh-boost=""
       role="dialog"
       aria-label={t('panel.title')}
+      onKeyDown={(event) => {
+        // Escape belongs to the card, not to whatever inside it has focus.
+        if (event.key !== 'Escape') return
+        event.stopPropagation()
+        store.togglePanel(false)
+      }}
       style={box === null ? undefined : { top: box.top, maxHeight: box.maxHeight, right: box.right }}
     >
       <header className="dsh-boost-panel-head">
@@ -237,7 +254,25 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
               className="dsh-boost-item"
               data-kind={annotation.kind}
               data-active={snapshot.activeId === annotation.id ? 'true' : undefined}
+              tabIndex={0}
               onClick={() => { store.setActive(annotation.id); store.reveal(annotation.id) }}
+              onKeyDown={(event) => {
+                // Rows are reachable and actionable from the keyboard; the
+                // buttons inside them already are, so only the row itself and
+                // list traversal need handling here.
+                const keys = ['ArrowDown', 'ArrowUp', 'Enter', ' ']
+                if (!keys.includes(event.key)) return
+                event.preventDefault()
+                if (event.key === 'Enter' || event.key === ' ') {
+                  store.setActive(annotation.id)
+                  store.reveal(annotation.id)
+                  return
+                }
+                const rows = [...(event.currentTarget.parentElement?.querySelectorAll('.dsh-boost-item') ?? [])]
+                const here = rows.indexOf(event.currentTarget)
+                const next = rows[here + (event.key === 'ArrowDown' ? 1 : -1)]
+                if (next instanceof HTMLElement) next.focus()
+              }}
             >
               <div className="dsh-boost-quote" data-kind={annotation.kind}>{annotation.quote}</div>
               {editing?.id === annotation.id
@@ -382,6 +417,7 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
       </ul>
       {unusable && <div className="dsh-boost-hint">{t('panel.lostHint')}</div>}
       <footer className="dsh-boost-panel-foot">
+        {failure !== null && <span className="dsh-boost-foot-note" role="status">{failure}</span>}
         <button
           type="button"
           className="dsh-boost-foot-button"
