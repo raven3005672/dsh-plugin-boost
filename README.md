@@ -47,7 +47,7 @@ dsh plugin --profile desktop add "file:$PWD"
 
 ## 数据
 
-- 存在浏览器的 `localStorage`，键为 `dsh-plugin-highlight-notes/v1/<sessionId>`（改名前的 `dsh-plugin-boost/v1/` 仍会被读取一次）。
+- 存在浏览器的 `localStorage`，键为 `dsh-plugin-highlight-notes/v1/<sessionId>`。
 - **不进入会话日志**，换设备或清空站点数据会丢；这是刻意的取舍（见 `DESIGN.md`）。
 - 卸载插件不会删除已有数据，重新安装即可看到。
 

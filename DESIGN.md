@@ -16,7 +16,7 @@
 不做真列的原因：`AppFrame` 固定三列，`rightbar` 是 single 且被文档预览占用。真列需要上游新增槽位，见文末「暂缓」。
 
 **D4 入口：第 10 区药丸。**
-`conversation.composer.dock` 是 list 槽位，加一个 `id: 'boost.annotations'`、`order: 2` 的药丸，显示「标注 N」，点击开关浮层。
+`conversation.composer.dock` 是 list 槽位，加一个 `id: 'highlight-notes.annotations'`、`order: 2` 的药丸，显示「批注 N」，点击开关浮层。
 这个槽位是 session 作用域，占用者能直接拿到 `inputActions`，入口与写入在同一上下文里闭环，不需要桥接组件。
 
 **D5 区域编号。**
@@ -86,7 +86,7 @@
 锚点指向某条会话里的某段文本，所以标注天然属于某个会话。存储键：
 
 ```
-boost/annotations/<workspaceId>/<sessionId>   →  该会话的标注数组
+highlight-notes/<sessionId>   →  该会话的批注数组
 ```
 
 三个必须做对的点：
