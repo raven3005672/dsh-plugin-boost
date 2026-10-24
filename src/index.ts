@@ -10,7 +10,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 
 /** Cordis plugin name used by loader diagnostics. */
-export const name = 'boost'
+export const name = 'highlight-notes'
 
 /** No host service is required; the config row is served by the settings layer. */
 export const inject: string[] = []

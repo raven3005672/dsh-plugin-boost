@@ -1,4 +1,4 @@
-# dsh-plugin-boost 设计决策
+# dsh-plugin-highlight-notes（批注）设计决策
 
 > 状态：讨论中，未开始写插件代码。demo 在 `demo/`，只用于验证锚点算法与交互手感。
 

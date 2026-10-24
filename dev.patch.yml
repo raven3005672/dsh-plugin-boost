@@ -2,5 +2,5 @@
 # From the deepseek-harness checkout:
 #   pnpm dsh web --patch ../dsh-plugin-boost/dev.patch.yml
 - insert:
-    - id: dsh-plugin-boost
+    - id: dsh-plugin-highlight-notes
       name: /Users/yanglin/github/dsh-plugin-boost/lib/index.js

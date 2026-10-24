@@ -157,7 +157,7 @@ export function BoostOverlay({ store, t }: BoostOverlayProps) {
   }, [snapshot.viewEpoch])
 
   useEffect(() => {
-    if (!supported()) console.warn('dsh-plugin-boost: CSS Custom Highlight API unavailable')
+    if (!supported()) console.warn('dsh-plugin-highlight-notes: CSS Custom Highlight API unavailable')
   }, [store, t])
 
   useEffect(() => {

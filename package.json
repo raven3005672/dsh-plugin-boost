@@ -1,7 +1,7 @@
 {
-  "name": "dsh-plugin-boost",
+  "name": "dsh-plugin-highlight-notes",
   "version": "0.1.0",
-  "description": "Markdown annotations for DeepSeek Harness: select text in an answer, right-click, highlight and keep a note, then drop it into the composer.",
+  "description": "Annotations for DeepSeek Harness: select text in an answer, highlight or quote it with a note, and drop the excerpt back into the composer.",
   "license": "MIT",
   "type": "module",
   "icon": "icon.svg",
@@ -25,8 +25,14 @@
     "deepseek-harness",
     "dsh-plugin",
     "annotation",
+    "annotations",
     "highlight",
-    "markdown"
+    "note",
+    "notes",
+    "comment",
+    "quote",
+    "批注",
+    "标注"
   ],
   "dsh": {
     "bundle": {

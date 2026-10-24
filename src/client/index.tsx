@@ -24,30 +24,30 @@ import { BoostStore } from './store.ts'
 import { STYLES } from './styles.ts'
 
 /** Cordis plugin name used by loader diagnostics. */
-export const name = 'boost'
+export const name = 'highlight-notes'
 
 /** Services this plugin reads. */
 export const inject = ['slots', 'locale', 'configForms']
 
 /** Copy namespace this plugin owns. */
-const LOCALE_NS = 'boost'
+const LOCALE_NS = 'highlight-notes'
 
 /** Settings namespace this plugin owns: the row id in the profile patch. */
-const SETTINGS_NAMESPACE = 'dsh-plugin-boost'
+const SETTINGS_NAMESPACE = 'dsh-plugin-highlight-notes'
 
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
     /** Annotation copy. */
-    boost: BoostKey
+    'highlight-notes': BoostKey
   }
 }
 
 /** Standard seats of a composer-dock entry plus this plugin's copy. */
-type DockProps = PropsRuntime<'conversation.composer.dock'> & PropsLocale<'boost'>
+type DockProps = PropsRuntime<'conversation.composer.dock'> & PropsLocale<'highlight-notes'>
 
 /** Standard seats of an overlay entry plus this plugin's copy. */
-type OverlayProps = PropsRuntime<'shell.overlay'> & PropsLocale<'boost'>
+type OverlayProps = PropsRuntime<'shell.overlay'> & PropsLocale<'highlight-notes'>
 
 /**
  * Register both seats and the stylesheet.
@@ -119,12 +119,12 @@ export function apply(ctx: Context): void {
   // `inject` waits for the declaration: a composition without the conversation
   // dock simply never mounts the pill instead of failing at load.
   ctx.slots.inject('conversation.composer.dock', () => ctx.slots.register(
-    { name: 'conversation.composer.dock', id: 'boost.annotations', order: 2, locale: LOCALE_NS },
+    { name: 'conversation.composer.dock', id: 'highlight-notes.annotations', order: 2, locale: LOCALE_NS },
     Dock,
   ))
 
   ctx.slots.inject('shell.overlay', () => ctx.slots.register(
-    { name: 'shell.overlay', id: 'boost.overlay', locale: LOCALE_NS },
+    { name: 'shell.overlay', id: 'highlight-notes.overlay', locale: LOCALE_NS },
     Overlay,
   ))
 
@@ -133,7 +133,7 @@ export function apply(ctx: Context): void {
   // function so the nav entry follows the current language.
   ctx.slots.inject('settings.section', () => ctx.slots.register({
     name: 'settings.section',
-    id: 'boost',
+    id: 'highlight-notes',
     order: 40,
     label: () => ctx.locale.bind(LOCALE_NS)('nav'),
     locale: LOCALE_NS,

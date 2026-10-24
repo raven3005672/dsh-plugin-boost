@@ -11,13 +11,19 @@ import { locate } from './anchor.ts'
 import { clear, paint } from './highlights.ts'
 
 /** Versioned storage prefix; bumping the suffix is a breaking data change. */
-const STORAGE_PREFIX = 'dsh-plugin-boost/v1/'
+const STORAGE_PREFIX = 'dsh-plugin-highlight-notes/v1/'
+
+/**
+ * Prefix this plugin wrote under before it was named highlight-notes. Read
+ * once per session so annotations made before the rename are not orphaned.
+ */
+const LEGACY_PREFIX = 'dsh-plugin-boost/v1/'
 
 /** Browser-wide flag: show locating status and offsets in the list. */
-const DIAGNOSTICS_KEY = 'dsh-plugin-boost/diagnostics'
+const DIAGNOSTICS_KEY = 'dsh-plugin-highlight-notes/diagnostics'
 
 /** Browser-wide list filter. */
-const FILTER_KEY = 'dsh-plugin-boost/filter'
+const FILTER_KEY = 'dsh-plugin-highlight-notes/filter'
 
 /** What the list shows: actionable notes only, plain marks only, or both. */
 export type ListFilter = AnnotationKind | 'all'
@@ -74,7 +80,10 @@ function storageKey(sessionId: string): string {
  */
 function readStored(sessionId: string): Annotation[] {
   try {
-    const raw = localStorage.getItem(storageKey(sessionId))
+    const stored = localStorage.getItem(storageKey(sessionId))
+    // Fall back to the pre-rename key once, then keep it: the next write lands
+    // under the current prefix and nobody loses work across the rename.
+    const raw = stored ?? localStorage.getItem(`${LEGACY_PREFIX}${sessionId}`)
     if (raw === null) return []
     const parsed: unknown = JSON.parse(raw)
     if (!Array.isArray(parsed)) return []
