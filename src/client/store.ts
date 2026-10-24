@@ -29,7 +29,7 @@ const FILTER_KEY = 'dsh-plugin-highlight-notes/filter'
 export type ListFilter = AnnotationKind | 'all'
 
 /** What the UI renders from. */
-export interface BoostSnapshot {
+export interface NotesSnapshot {
   /** Session currently displayed, absent before the first binding. */
   readonly sessionId: string | undefined
   /** Bumped whenever the conversation the store points at changes. */
@@ -120,7 +120,7 @@ function writeStored(sessionId: string, list: readonly Annotation[]): void {
 }
 
 /** Owner of every annotation-related fact the UI reads. */
-export class BoostStore {
+export class NotesStore {
   private viewEpoch = 0
   private sessionId: string | undefined
   private annotations: Annotation[] = []
@@ -133,7 +133,7 @@ export class BoostStore {
   private input: InputFacts = { draft: '', phase: 'plain', occurrences: 0, actions: undefined }
   private listeners = new Set<() => void>()
   private signature = ''
-  private snapshot: BoostSnapshot = {
+  private snapshot: NotesSnapshot = {
     sessionId: undefined,
     viewEpoch: 0,
     annotations: [],
@@ -194,7 +194,7 @@ export class BoostStore {
   }
 
   /** @returns the current immutable snapshot. */
-  getSnapshot(): BoostSnapshot {
+  getSnapshot(): NotesSnapshot {
     return this.snapshot
   }
 
@@ -329,8 +329,8 @@ export class BoostStore {
   private setPanelOpen(open: boolean): void {
     const changed = this.panelOpen !== open
     this.panelOpen = open
-    if (open) document.documentElement.setAttribute('data-dsh-boost-shift', '')
-    else document.documentElement.removeAttribute('data-dsh-boost-shift')
+    if (open) document.documentElement.setAttribute('data-dsh-notes-shift', '')
+    else document.documentElement.removeAttribute('data-dsh-notes-shift')
     if (changed) this.publish()
     if (open) this.refresh()
   }

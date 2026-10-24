@@ -1,5 +1,5 @@
 /**
- * `boost` namespace dictionaries. The Chinese map is the key-set source of
+ * `highlight-notes` namespace dictionaries. The Chinese map is the key-set source of
  * truth; the English map must cover exactly the same keys.
  */
 
@@ -55,10 +55,10 @@ export const zh = {
 } as const
 
 /** Key set every locale must provide. */
-export type BoostKey = keyof typeof zh
+export type CopyKey = keyof typeof zh
 
 /** English copy. */
-export const en: Record<BoostKey, string> = {
+export const en: Record<CopyKey, string> = {
   'nav': 'Annotations',
   'pill.label': 'Notes',
   'pill.tip': 'Annotate text in this answer',
@@ -109,4 +109,4 @@ export const en: Record<BoostKey, string> = {
 }
 
 /** Translation seat this plugin's components receive (mirrors the shell's `Translate`). */
-export type BoostTranslate = (key: BoostKey, params?: Record<string, unknown>) => string
+export type Translate = (key: CopyKey, params?: Record<string, unknown>) => string

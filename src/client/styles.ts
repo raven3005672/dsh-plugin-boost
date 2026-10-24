@@ -8,21 +8,21 @@
 export const STYLES = `
 /* The foreground is pinned to a dark ink: the amber plate is light in both
    palettes, so inheriting the dark theme's near-white text would wash out. */
-::highlight(dsh-boost-quote) {
+::highlight(dsh-notes-quote) {
   background-color: color-mix(in srgb, #ffc400 72%, transparent);
   color: #1f2328;
 }
-::highlight(dsh-boost-quote-active) {
+::highlight(dsh-notes-quote-active) {
   background-color: color-mix(in srgb, #ff8f00 88%, transparent);
   color: #1f2328;
 }
 /* Plain marks are a cool plate so a page full of them reads as "noted", not
    "still to do". Kept light enough for the pinned dark ink in both palettes. */
-::highlight(dsh-boost-mark) {
+::highlight(dsh-notes-mark) {
   background-color: color-mix(in srgb, #7dd3fc 72%, transparent);
   color: #1f2328;
 }
-::highlight(dsh-boost-mark-active) {
+::highlight(dsh-notes-mark-active) {
   background-color: color-mix(in srgb, #38bdf8 88%, transparent);
   color: #1f2328;
 }
@@ -30,8 +30,8 @@ export const STYLES = `
 /* The conversation column is centred inside its scroll container, so the
    shift goes on the scroll container: the column moves left as a whole and
    keeps its own max width. */
-html[data-dsh-boost-shift] [data-conversation-scroll] {
-  padding-right: var(--dsh-boost-shift, 264px);
+html[data-dsh-notes-shift] [data-conversation-scroll] {
+  padding-right: var(--dsh-notes-shift, 264px);
   transition: padding-right 180ms ease;
 }
 
@@ -39,13 +39,13 @@ html[data-dsh-boost-shift] [data-conversation-scroll] {
    the column: once the panel shifts the text left they float in the gap and
    read as a stray drag strip beside the card. Suppressed only while the panel
    is open, and restored the moment it closes. */
-html[data-dsh-boost-shift] [class*='widthHandle'] {
+html[data-dsh-notes-shift] [class*='widthHandle'] {
   display: none;
 }
 
 /* Matches the shipped statistics pills: 22px tall, 12px muted text, no
    border, 8px radius, transparent until hover. */
-.dsh-boost-pill {
+.dsh-notes-pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -64,27 +64,27 @@ html[data-dsh-boost-shift] [class*='widthHandle'] {
      composite means fading the whole control rather than picking a new token. */
   opacity: 0.8;
 }
-.dsh-boost-pill svg {
+.dsh-notes-pill svg {
   width: 14px;
   height: 14px;
   flex: none;
 }
-.dsh-boost-pill:hover {
+.dsh-notes-pill:hover {
   background: var(--dsw-alias-bg-layer-2, rgba(0, 0, 0, 0.05));
   color: var(--dsw-alias-label-primary, #1f2328);
   opacity: 1;
 }
-.dsh-boost-pill[data-active='true'] {
+.dsh-notes-pill[data-active='true'] {
   background: var(--dsw-alias-bg-layer-2, rgba(0, 0, 0, 0.06));
   color: var(--dsw-alias-brand-primary, #2563eb);
   opacity: 1;
 }
-.dsh-boost-pill-count {
+.dsh-notes-pill-count {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
 }
 
-.dsh-boost-panel {
+.dsh-notes-panel {
   position: fixed;
   top: 84px;
   right: 12px;
@@ -99,7 +99,7 @@ html[data-dsh-boost-shift] [class*='widthHandle'] {
   font: inherit;
   z-index: 30;
 }
-.dsh-boost-panel-head {
+.dsh-notes-panel-head {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -109,11 +109,11 @@ html[data-dsh-boost-shift] [class*='widthHandle'] {
   font-weight: 600;
   color: var(--dsw-alias-label-primary, #1f2328);
 }
-.dsh-boost-panel-title {
+.dsh-notes-panel-title {
   flex: none;
   white-space: nowrap;
 }
-.dsh-boost-close {
+.dsh-notes-close {
   margin-left: auto;
   font: inherit;
   font-size: 12px;
@@ -122,7 +122,7 @@ html[data-dsh-boost-shift] [class*='widthHandle'] {
   cursor: pointer;
   color: var(--dsw-alias-label-secondary, #6b7280);
 }
-.dsh-boost-trigger {
+.dsh-notes-trigger {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -141,15 +141,15 @@ html[data-dsh-boost-shift] [class*='widthHandle'] {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.dsh-boost-trigger:hover {
+.dsh-notes-trigger:hover {
   background: var(--dsw-alias-bg-layer-3, rgba(0, 0, 0, 0.05));
   color: var(--dsw-alias-label-primary, #1f2328);
 }
-.dsh-boost-trigger[aria-expanded='true'] {
+.dsh-notes-trigger[aria-expanded='true'] {
   background: var(--dsw-alias-bg-layer-3, rgba(0, 0, 0, 0.06));
 }
 
-.dsh-boost-list {
+.dsh-notes-list {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -157,7 +157,7 @@ html[data-dsh-boost-shift] [class*='widthHandle'] {
   padding: 8px;
   list-style: none;
 }
-.dsh-boost-empty {
+.dsh-notes-empty {
   padding: 10px 12px;
   color: var(--dsw-alias-label-secondary, #6b7280);
   font-size: 12px;
@@ -166,10 +166,10 @@ html[data-dsh-boost-shift] [class*='widthHandle'] {
 /* Option A: the row is transparent; the kind is carried by the 3px colour bar
    alone, and hover/selection are neutral washes. Tinted fills on every row
    made the list read as a colour chart next to the conversation. */
-.dsh-boost-item {
-  --dsh-boost-accent: #b6bcc6;
+.dsh-notes-item {
+  --dsh-notes-accent: #b6bcc6;
   border: 0;
-  border-left: 3px solid var(--dsh-boost-accent);
+  border-left: 3px solid var(--dsh-notes-accent);
   border-radius: 8px;
   padding: 6px 8px 6px 9px;
   margin-bottom: 8px;
@@ -178,36 +178,36 @@ html[data-dsh-boost-shift] [class*='widthHandle'] {
   box-shadow: 0 1px 3px rgba(15, 17, 21, 0.07), 0 0 1px rgba(15, 17, 21, 0.1);
   transition: background-color 120ms ease;
 }
-.dsh-boost-item[data-kind='quote'] {
-  --dsh-boost-accent: #f0b429;
+.dsh-notes-item[data-kind='quote'] {
+  --dsh-notes-accent: #f0b429;
 }
-.dsh-boost-item[data-kind='mark'] {
-  --dsh-boost-accent: #38a3e8;
+.dsh-notes-item[data-kind='mark'] {
+  --dsh-notes-accent: #38a3e8;
 }
-.dsh-boost-item:hover {
+.dsh-notes-item:hover {
   background: rgba(38, 49, 72, 0.04);
 }
-.dsh-boost-item:focus-visible {
+.dsh-notes-item:focus-visible {
   outline: none;
   box-shadow:
     0 1px 3px rgba(15, 17, 21, 0.09),
     0 0 0 2px var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary, #2563eb));
 }
-.dsh-boost-item[data-active='true'] {
+.dsh-notes-item[data-active='true'] {
   background: rgba(38, 49, 72, 0.07);
   box-shadow:
     0 1px 3px rgba(15, 17, 21, 0.09),
     0 0 1px rgba(15, 17, 21, 0.12),
     inset 0 0 0 1px rgba(15, 17, 21, 0.12);
 }
-body[data-ds-dark-theme] .dsh-boost-item:hover {
+body[data-ds-dark-theme] .dsh-notes-item:hover {
   background: rgba(255, 255, 255, 0.06);
 }
-body[data-ds-dark-theme] .dsh-boost-item {
+body[data-ds-dark-theme] .dsh-notes-item {
   background: rgba(255, 255, 255, 0.04);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45), 0 0 1px rgba(255, 255, 255, 0.12);
 }
-body[data-ds-dark-theme] .dsh-boost-item[data-active='true'] {
+body[data-ds-dark-theme] .dsh-notes-item[data-active='true'] {
   background: rgba(255, 255, 255, 0.1);
   box-shadow:
     0 1px 3px rgba(0, 0, 0, 0.45),
@@ -218,7 +218,7 @@ body[data-ds-dark-theme] .dsh-boost-item[data-active='true'] {
 /* The excerpt carries weight rather than a tint: with the row's colour bar and
    the highlighted text in the transcript both already saying "quote", a third
    coloured block read as noise. */
-.dsh-boost-quote {
+.dsh-notes-quote {
   font-size: 12.5px;
   font-weight: 600;
   line-height: 1.6;
@@ -228,13 +228,13 @@ body[data-ds-dark-theme] .dsh-boost-item[data-active='true'] {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.dsh-boost-note-row {
+.dsh-notes-note-row {
   display: flex;
   align-items: center;
   gap: 6px;
   margin-top: 4px;
 }
-.dsh-boost-icon-button {
+.dsh-notes-icon-button {
   flex: none;
   display: inline-grid;
   place-items: center;
@@ -247,14 +247,14 @@ body[data-ds-dark-theme] .dsh-boost-item[data-active='true'] {
   color: var(--dsw-alias-label-secondary, #6b7280);
   cursor: pointer;
 }
-.dsh-boost-icon-button:hover {
+.dsh-notes-icon-button:hover {
   background: rgba(38, 49, 72, 0.08);
   color: var(--dsw-alias-label-primary, #1f2328);
 }
-body[data-ds-dark-theme] .dsh-boost-icon-button:hover {
+body[data-ds-dark-theme] .dsh-notes-icon-button:hover {
   background: rgba(255, 255, 255, 0.1);
 }
-.dsh-boost-note {
+.dsh-notes-note {
   font-size: 12px;
   line-height: 1.6;
   color: var(--dsw-alias-label-secondary, #6b7280);
@@ -263,11 +263,11 @@ body[data-ds-dark-theme] .dsh-boost-icon-button:hover {
   padding: 1px 3px;
   margin-left: -3px;
 }
-.dsh-boost-note[data-empty='true'] {
+.dsh-notes-note[data-empty='true'] {
   opacity: 0.65;
   font-style: italic;
 }
-.dsh-boost-note-edit {
+.dsh-notes-note-edit {
   display: block;
   width: 100%;
   box-sizing: border-box;
@@ -283,7 +283,7 @@ body[data-ds-dark-theme] .dsh-boost-icon-button:hover {
   background: var(--dsw-alias-bg-base, #ffffff);
   color: var(--dsw-alias-label-primary, #1f2328);
 }
-.dsh-boost-meta {
+.dsh-notes-meta {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -291,17 +291,17 @@ body[data-ds-dark-theme] .dsh-boost-icon-button:hover {
   font-size: 10.5px;
   color: var(--dsw-alias-label-secondary, #6b7280);
 }
-.dsh-boost-badge {
+.dsh-notes-badge {
   border: 1px solid currentColor;
   border-radius: 999px;
   padding: 0 5px;
   font-size: 10px;
 }
-.dsh-boost-badge[data-status='exact'] { color: #047857; }
-.dsh-boost-badge[data-status='fuzzy'] { color: #b45309; }
-.dsh-boost-badge[data-status='lost'],
-.dsh-boost-badge[data-status='missing'] { color: #b91c1c; }
-.dsh-boost-hint {
+.dsh-notes-badge[data-status='exact'] { color: #047857; }
+.dsh-notes-badge[data-status='fuzzy'] { color: #b45309; }
+.dsh-notes-badge[data-status='lost'],
+.dsh-notes-badge[data-status='missing'] { color: #b91c1c; }
+.dsh-notes-hint {
   padding: 6px 12px;
   font-size: 11.5px;
   line-height: 1.5;
@@ -309,19 +309,19 @@ body[data-ds-dark-theme] .dsh-boost-icon-button:hover {
   border-top: 1px solid var(--dsw-alias-border-l2, #e5e7eb);
 }
 
-.dsh-boost-panel-foot {
+.dsh-notes-panel-foot {
   display: flex;
   justify-content: flex-end;
   padding: 2px 8px;
   border-top: 1px solid var(--dsw-alias-border-l2, #e5e7eb);
 }
-.dsh-boost-foot-note {
+.dsh-notes-foot-note {
   margin-right: auto;
   font-size: 11.5px;
   line-height: 1.4;
   color: var(--dsw-alias-state-error-primary, #b91c1c);
 }
-.dsh-boost-foot-button {
+.dsh-notes-foot-button {
   font: inherit;
   font-size: 11px;
   padding: 2px 8px;
@@ -332,23 +332,23 @@ body[data-ds-dark-theme] .dsh-boost-icon-button:hover {
   cursor: pointer;
   opacity: 0.8;
 }
-.dsh-boost-foot-button:hover {
+.dsh-notes-foot-button:hover {
   background: var(--dsw-alias-bg-layer-3, rgba(0, 0, 0, 0.05));
   color: var(--dsw-alias-label-primary, #1f2328);
   opacity: 1;
 }
-.dsh-boost-foot-button[data-on='true'] {
+.dsh-notes-foot-button[data-on='true'] {
   color: var(--dsw-alias-brand-primary, #2563eb);
   opacity: 1;
 }
-.dsh-boost-actions {
+.dsh-notes-actions {
   display: flex;
   align-items: center;
   gap: 6px;
   margin-top: 6px;
   flex-wrap: wrap;
 }
-.dsh-boost-action {
+.dsh-notes-action {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -362,10 +362,10 @@ body[data-ds-dark-theme] .dsh-boost-icon-button:hover {
   color: var(--dsw-alias-label-primary, #1f2328);
   cursor: pointer;
 }
-.dsh-boost-action:hover {
+.dsh-notes-action:hover {
   background: rgba(38, 49, 72, 0.08);
 }
-body[data-ds-dark-theme] .dsh-boost-action:hover {
+body[data-ds-dark-theme] .dsh-notes-action:hover {
   background: rgba(255, 255, 255, 0.1);
 }
 /* Same shape as the app's open-with control: one hairline pill, a main
@@ -374,11 +374,11 @@ body[data-ds-dark-theme] .dsh-boost-action:hover {
    it. Inside this card that means a highlighted row tints the whole menu warm,
    while the same menu over plain text looks white. Pin our menus to the solid
    layer colour so all four read the same. */
-.dsh-boost-menu-surface {
+.dsh-notes-menu-surface {
   --dsw-menu-surface-fill: var(--dsw-alias-bg-layer-2, #ffffff);
 }
 
-.dsh-boost-split {
+.dsh-notes-split {
   display: inline-flex;
   align-items: stretch;
   box-sizing: border-box;
@@ -387,8 +387,8 @@ body[data-ds-dark-theme] .dsh-boost-action:hover {
   border: 0.5px solid var(--dsw-alias-border-l4, rgba(0, 0, 0, 0.15));
   border-radius: var(--dsw-radius-sm, 8px);
 }
-.dsh-boost-split-main,
-.dsh-boost-split-chevron {
+.dsh-notes-split-main,
+.dsh-notes-split-chevron {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -401,29 +401,29 @@ body[data-ds-dark-theme] .dsh-boost-action:hover {
   white-space: nowrap;
   cursor: pointer;
 }
-.dsh-boost-split-main {
+.dsh-notes-split-main {
   gap: 4px;
   padding: 3px 5px;
 }
-.dsh-boost-split-chevron {
+.dsh-notes-split-chevron {
   padding: 3px 4px 3px 3px;
   border-left: 0.5px solid var(--dsw-alias-border-l4, rgba(0, 0, 0, 0.15));
   color: var(--dsw-alias-label-secondary, #6b7280);
 }
-.dsh-boost-split-main:hover,
-.dsh-boost-split-chevron:hover,
-.dsh-boost-split-chevron[aria-expanded='true'] {
+.dsh-notes-split-main:hover,
+.dsh-notes-split-chevron:hover,
+.dsh-notes-split-chevron[aria-expanded='true'] {
   background: var(--dsw-alias-interactive-bg-hover, rgba(0, 0, 0, 0.05));
 }
-.dsh-boost-split-slot {
+.dsh-notes-split-slot {
   display: inline-flex;
 }
 
-.dsh-boost-more-slot {
+.dsh-notes-more-slot {
   margin-left: auto;
   display: inline-flex;
 }
-.dsh-boost-more {
+.dsh-notes-more {
   height: 24px;
   min-width: 24px;
   font: inherit;
@@ -436,15 +436,15 @@ body[data-ds-dark-theme] .dsh-boost-action:hover {
   color: var(--dsw-alias-label-secondary, #6b7280);
   cursor: pointer;
 }
-.dsh-boost-more:hover {
+.dsh-notes-more:hover {
   background: rgba(38, 49, 72, 0.08);
   color: var(--dsw-alias-label-primary, #1f2328);
 }
-body[data-ds-dark-theme] .dsh-boost-more:hover {
+body[data-ds-dark-theme] .dsh-notes-more:hover {
   background: rgba(255, 255, 255, 0.1);
 }
 
-.dsh-boost-composer {
+.dsh-notes-composer {
   position: fixed;
   width: 300px;
   padding: 10px;
@@ -454,7 +454,7 @@ body[data-ds-dark-theme] .dsh-boost-more:hover {
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
   z-index: 40;
 }
-.dsh-boost-composer textarea {
+.dsh-notes-composer textarea {
   width: 100%;
   min-height: 64px;
   resize: vertical;
@@ -467,13 +467,13 @@ body[data-ds-dark-theme] .dsh-boost-more:hover {
   background: var(--dsw-alias-bg-base, #ffffff);
   color: var(--dsw-alias-label-primary, #1f2328);
 }
-.dsh-boost-composer-row {
+.dsh-notes-composer-row {
   display: flex;
   justify-content: flex-end;
   gap: 6px;
   margin-top: 8px;
 }
-.dsh-boost-composer-row button {
+.dsh-notes-composer-row button {
   font: inherit;
   font-size: 12px;
   padding: 4px 10px;
@@ -483,39 +483,39 @@ body[data-ds-dark-theme] .dsh-boost-more:hover {
   color: var(--dsw-alias-label-primary, #1f2328);
   cursor: pointer;
 }
-.dsh-boost-composer-row button[data-primary='true'] {
+.dsh-notes-composer-row button[data-primary='true'] {
   background: var(--dsw-alias-button-primary-fill, #2563eb);
   border-color: var(--dsw-alias-button-primary-fill, #2563eb);
   color: var(--dsw-alias-label-primary-inverted, #ffffff);
   font-weight: 500;
 }
-.dsh-boost-composer-row button[data-primary='true']:hover {
+.dsh-notes-composer-row button[data-primary='true']:hover {
   filter: brightness(1.05);
 }
 
 
 /* Settings section. Mirrors the shell's settings pages: 18px heading, 13px
    intro, hairline rows, 32px inputs and primitive buttons. */
-.dsh-boost-settings {
+.dsh-notes-settings {
   display: flex;
   flex-direction: column;
   gap: 12px;
   max-width: 760px;
   color: var(--dsw-alias-label-primary, #1f2328);
 }
-.dsh-boost-settings-title {
+.dsh-notes-settings-title {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
 }
-.dsh-boost-settings-intro,
-.dsh-boost-settings-empty {
+.dsh-notes-settings-intro,
+.dsh-notes-settings-empty {
   margin: 0;
   font-size: 13px;
   line-height: 1.5;
   color: var(--dsw-alias-label-tertiary, #9aa0a6);
 }
-.dsh-boost-preset {
+.dsh-notes-preset {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 2.2fr) auto;
   align-items: center;
@@ -524,7 +524,7 @@ body[data-ds-dark-theme] .dsh-boost-more:hover {
   border-radius: var(--dsw-radius-lg, 12px);
   padding: 6px;
 }
-.dsh-boost-input {
+.dsh-notes-input {
   box-sizing: border-box;
   width: 100%;
   height: 32px;
@@ -537,18 +537,18 @@ body[data-ds-dark-theme] .dsh-boost-more:hover {
   background: var(--dsw-alias-bg-layer-1, #ffffff);
   color: var(--dsw-alias-label-primary, #1f2328);
 }
-.dsh-boost-input:focus {
+.dsh-notes-input:focus {
   outline: none;
   border-color: var(--dsw-alias-state-business-primary, #2563eb);
 }
-.dsh-boost-input::placeholder {
+.dsh-notes-input::placeholder {
   color: var(--dsw-alias-label-dimmed, #b6bcc6);
 }
-.dsh-boost-input:disabled {
+.dsh-notes-input:disabled {
   opacity: 0.6;
   cursor: default;
 }
-.dsh-boost-settings-trash {
+.dsh-notes-settings-trash {
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
@@ -561,15 +561,15 @@ body[data-ds-dark-theme] .dsh-boost-more:hover {
   color: var(--dsw-alias-label-tertiary, #9aa0a6);
   cursor: pointer;
 }
-.dsh-boost-settings-trash:hover:not(:disabled) {
+.dsh-notes-settings-trash:hover:not(:disabled) {
   background: var(--dsw-alias-interactive-bg-hover-danger, rgba(220, 38, 38, 0.08));
   color: var(--dsw-alias-state-error-primary, #dc2626);
 }
-.dsh-boost-settings-trash:disabled {
+.dsh-notes-settings-trash:disabled {
   cursor: default;
   opacity: 0.4;
 }
-.dsh-boost-settings-actions {
+.dsh-notes-settings-actions {
   display: flex;
   gap: 8px;
 }

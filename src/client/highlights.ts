@@ -12,10 +12,10 @@
 
 /** Registry names, one per kind plus its selected state. */
 const NAMES = {
-  quote: 'dsh-boost-quote',
-  quoteActive: 'dsh-boost-quote-active',
-  mark: 'dsh-boost-mark',
-  markActive: 'dsh-boost-mark-active',
+  quote: 'dsh-notes-quote',
+  quoteActive: 'dsh-notes-quote-active',
+  mark: 'dsh-notes-mark',
+  markActive: 'dsh-notes-mark-active',
 } as const
 
 /** Whether this browser can paint custom highlights. */

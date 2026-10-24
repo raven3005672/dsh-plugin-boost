@@ -1,5 +1,5 @@
 /**
- * The Settings-page body for boost.
+ * The Settings-page body for the plugin.
  *
  * It edits the one thing the plugin lets users decide: their own shortcuts.
  * The annotation list itself has no configurable surface by design — colours
@@ -13,10 +13,10 @@ import { useEffect, useState } from 'react'
 import type { ReactElement } from 'react'
 import { Button, IconPlusOutlineRegular, IconTrashOutlineRegular } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { Preset } from './contract.ts'
-import type { BoostKey } from './locales.ts'
+import type { CopyKey } from './locales.ts'
 
 /** One settings write the settings page accepts. */
-export interface BoostConfigOp {
+export interface SettingsConfigOp {
   /** Set or clear one field. */
   op: 'set' | 'unset'
   /** Field path inside the row namespace. */
@@ -26,7 +26,7 @@ export interface BoostConfigOp {
 }
 
 /** The settings snapshot the page passes down. */
-export interface BoostConfigState {
+export interface SettingsConfigState {
   /** Whether the Host serves this row's namespace yet. */
   status: 'loading' | 'ready' | 'unavailable'
   /** Current values, absent until the first read settles. */
@@ -40,13 +40,13 @@ export interface BoostConfigState {
 }
 
 /** Owner props of this slot. */
-export interface BoostSettingsRowProps {
+export interface SettingsPageProps {
   /** Namespace translator supplied by the slot registration. */
-  t?(key: BoostKey): string
+  t?(key: CopyKey): string
   /** Row settings face, absent while the namespace is not served. */
   form?: {
-    state: BoostConfigState
-    mutate(ops: readonly BoostConfigOp[], revision?: number): Promise<boolean>
+    state: SettingsConfigState
+    mutate(ops: readonly SettingsConfigOp[], revision?: number): Promise<boolean>
   }
 }
 
@@ -63,12 +63,12 @@ function hasStoredPresets(user: unknown): boolean {
 }
 
 /**
- * Render the boost settings page.
+ * Render the annotation settings page.
  * @param props - owner props supplied by the settings section.
  * @returns the heading, the shortcut rows and their actions.
  */
-export function BoostSettingsRow({ form, t }: BoostSettingsRowProps): ReactElement | null {
-  const copy = (key: BoostKey): string => t?.(key) ?? key
+export function SettingsPage({ form, t }: SettingsPageProps): ReactElement | null {
+  const copy = (key: CopyKey): string => t?.(key) ?? key
   const [draft, setDraft] = useState<Preset[] | null>(null)
 
   useEffect(() => {
@@ -109,14 +109,14 @@ export function BoostSettingsRow({ form, t }: BoostSettingsRowProps): ReactEleme
   const rows = draft ?? (configured ? state.value?.presets ?? [] : builtIn)
 
   return (
-    <div className="dsh-boost-settings">
-      <h2 className="dsh-boost-settings-title">{copy('nav')}</h2>
-      <p className="dsh-boost-settings-intro">{copy('settings.hint')}</p>
-      {rows.length === 0 && <p className="dsh-boost-settings-empty">{copy('settings.empty')}</p>}
+    <div className="dsh-notes-settings">
+      <h2 className="dsh-notes-settings-title">{copy('nav')}</h2>
+      <p className="dsh-notes-settings-intro">{copy('settings.hint')}</p>
+      {rows.length === 0 && <p className="dsh-notes-settings-empty">{copy('settings.empty')}</p>}
       {rows.map((preset, index) => (
-        <div className="dsh-boost-preset" key={index}>
+        <div className="dsh-notes-preset" key={index}>
           <input
-            className="dsh-boost-input"
+            className="dsh-notes-input"
             value={preset.label}
             placeholder={copy('settings.label')}
             aria-label={copy('settings.label')}
@@ -125,7 +125,7 @@ export function BoostSettingsRow({ form, t }: BoostSettingsRowProps): ReactEleme
             onBlur={() => { commit(rows) }}
           />
           <input
-            className="dsh-boost-input"
+            className="dsh-notes-input"
             value={preset.prompt}
             placeholder={copy('settings.prompt')}
             aria-label={copy('settings.prompt')}
@@ -135,7 +135,7 @@ export function BoostSettingsRow({ form, t }: BoostSettingsRowProps): ReactEleme
           />
           <button
             type="button"
-            className="dsh-boost-settings-trash"
+            className="dsh-notes-settings-trash"
             aria-label={copy('settings.remove')}
             title={copy('settings.remove')}
             disabled={disabled}
@@ -145,7 +145,7 @@ export function BoostSettingsRow({ form, t }: BoostSettingsRowProps): ReactEleme
           </button>
         </div>
       ))}
-      <div className="dsh-boost-settings-actions">
+      <div className="dsh-notes-settings-actions">
         <Button
           variant="outline"
           size="sm"

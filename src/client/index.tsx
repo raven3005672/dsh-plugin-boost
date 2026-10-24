@@ -1,5 +1,5 @@
 /**
- * Browser half of boost.
+ * Browser half of the plugin.
  *
  * Two seats: a pill in the composer dock (session scope, where the composer's
  * input actions and the current session id are available) and the floating
@@ -16,11 +16,11 @@ import type {} from '@deepseek-ai/dsh-client-ui-session/client'
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 import type { PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import { AnnotationPill } from './AnnotationPill.tsx'
-import { BoostOverlay } from './BoostOverlay.tsx'
-import { BoostSettingsSection } from './BoostSettingsSection.tsx'
+import { SelectionLayer } from './SelectionLayer.tsx'
+import { SettingsSection } from './SettingsSection.tsx'
 import type { Preset } from './contract.ts'
-import { en, zh, type BoostKey } from './locales.ts'
-import { BoostStore } from './store.ts'
+import { en, zh, type CopyKey } from './locales.ts'
+import { NotesStore } from './store.ts'
 import { STYLES } from './styles.ts'
 
 /** Cordis plugin name used by loader diagnostics. */
@@ -39,7 +39,7 @@ const SETTINGS_NAMESPACE = 'dsh-plugin-highlight-notes'
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
     /** Annotation copy. */
-    'highlight-notes': BoostKey
+    'highlight-notes': CopyKey
   }
 }
 
@@ -54,7 +54,7 @@ type OverlayProps = PropsRuntime<'shell.overlay'> & PropsLocale<'highlight-notes
  * @param ctx - client Context.
  */
 export function apply(ctx: Context): void {
-  const store = new BoostStore()
+  const store = new NotesStore()
   store.loadDiagnostics()
 
   ctx.effect(() => ctx.locale.register(LOCALE_NS, { zh, en }))
@@ -114,7 +114,7 @@ export function apply(ctx: Context): void {
    * @param props - overlay seats plus copy.
    * @returns the overlay surfaces.
    */
-  const Overlay = (props: OverlayProps) => <BoostOverlay store={store} t={props.t} />
+  const Overlay = (props: OverlayProps) => <SelectionLayer store={store} t={props.t} />
 
   // `inject` waits for the declaration: a composition without the conversation
   // dock simply never mounts the pill instead of failing at load.
@@ -138,5 +138,5 @@ export function apply(ctx: Context): void {
     label: () => ctx.locale.bind(LOCALE_NS)('nav'),
     locale: LOCALE_NS,
     inject: () => ({ form: ctx.configForms.get<{ presets?: Preset[] }>(SETTINGS_NAMESPACE) }),
-  }, BoostSettingsSection))
+  }, SettingsSection))
 }

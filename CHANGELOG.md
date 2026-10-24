@@ -2,6 +2,9 @@
 
 ## 未发布
 
+- 清掉代码里残留的 `boost` 命名（218 处）：`BoostStore` → `NotesStore`、`BoostOverlay` → `SelectionLayer`、`BoostSettingsRow/Section` → `SettingsPage/Section`、`useBoost` → `useNotes`、`BoostKey/Translate` → `CopyKey/Translate`；CSS 前缀与高亮注册名 `dsh-boost-*` → `dsh-notes-*`，属性 `data-dsh-boost-shift` → `data-dsh-notes-shift`。
+- 唯一保留的是存储层读取用的 `LEGACY_PREFIX = 'dsh-plugin-boost/v1/'`，改名前的批注靠它读回。
+
 - 改名：包名 `dsh-plugin-boost` → `dsh-plugin-highlight-notes`，展示名「标注 Boost」→「批注」。`boost` 不描述功能，也搜不到；`highlight-notes` 自带两个检索词根。行 id、设置命名空间、语言命名空间同步更新；存储键改成新前缀，读取时会回退到旧前缀一次，改名前的标注不会丢。
 
 - 列表里的引文去掉类型色底，改成字重 600：行左侧已有色条、对话正文里也已高亮，第三处同色块反而显得杂乱。

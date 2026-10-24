@@ -7,16 +7,16 @@
  */
 import { useEffect } from 'react'
 import type { InputActionsLike } from './contract.ts'
-import type { BoostTranslate } from './locales.ts'
-import type { BoostStore } from './store.ts'
-import { useBoost } from './useBoost.ts'
+import type { Translate } from './locales.ts'
+import type { NotesStore } from './store.ts'
+import { useNotes } from './useNotes.ts'
 
 /** Props assembled by the registration wrapper from the slot's standard seats. */
 export interface AnnotationPillProps {
   /** Plugin store. */
-  readonly store: BoostStore
+  readonly store: NotesStore
   /** Localized copy. */
-  readonly t: BoostTranslate
+  readonly t: Translate
   /** Session the dock entry is bound to. */
   readonly sessionId: string
   /** Conversation input actions for that session. */
@@ -35,7 +35,7 @@ export interface AnnotationPillProps {
  * @returns the pill button.
  */
 export function AnnotationPill({ store, t, sessionId, inputActions, draft, phase, occurrences }: AnnotationPillProps) {
-  const snapshot = useBoost(store)
+  const snapshot = useNotes(store)
 
   useEffect(() => {
     store.bind(sessionId, { draft, phase, occurrences, actions: inputActions })
@@ -52,7 +52,7 @@ export function AnnotationPill({ store, t, sessionId, inputActions, draft, phase
   return (
     <button
       type="button"
-      className="dsh-boost-pill"
+      className="dsh-notes-pill"
       data-active={snapshot.panelOpen ? 'true' : undefined}
       title={t('pill.tip')}
       onClick={() => { store.togglePanel() }}
@@ -62,7 +62,7 @@ export function AnnotationPill({ store, t, sessionId, inputActions, draft, phase
         <path d="M14.5 4.5l5 5L9 20H4v-5L14.5 4.5z" />
       </svg>
       <span>{t('pill.label')}</span>
-      {count > 0 && <span className="dsh-boost-pill-count">{count}</span>}
+      {count > 0 && <span className="dsh-notes-pill-count">{count}</span>}
     </button>
   )
 }

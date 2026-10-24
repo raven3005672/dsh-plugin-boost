@@ -1,5 +1,5 @@
 /**
- * Host half of boost.
+ * Host half of the plugin.
  *
  * Annotations live in the browser and never enter the Session log, so this
  * half owns one thing: the settings namespace the Plugins page edits. The

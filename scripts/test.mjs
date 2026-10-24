@@ -13,7 +13,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-const dir = mkdtempSync(join(tmpdir(), 'dsh-boost-test-'))
+const dir = mkdtempSync(join(tmpdir(), 'dsh-notes-test-'))
 try {
   await build({
     entryPoints: ['src/client/anchor.ts'],

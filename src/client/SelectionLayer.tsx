@@ -1,5 +1,5 @@
 /**
- * The overlay-layer half of boost: selection menu, note composer, and the
+ * The overlay-layer half: selection menu, note composer, and the
  * panel itself.
  *
  * Everything here renders as a direct child of the shell's click-through
@@ -13,20 +13,20 @@ import type { MenuEntry } from '@deepseek-ai/dsh-client-ui-primitives'
 import { describeSelection, owningMessage } from './anchor.ts'
 import { AnnotationPanel } from './AnnotationPanel.tsx'
 import type { DraftSelection } from './contract.ts'
-import type { BoostTranslate } from './locales.ts'
-import type { BoostStore } from './store.ts'
+import type { Translate } from './locales.ts'
+import type { NotesStore } from './store.ts'
 import { supported } from './highlights.ts'
-import { useBoost } from './useBoost.ts'
+import { useNotes } from './useNotes.ts'
 
 /** Elements that delimit a selectable block; a range may not cross two. */
 const BLOCK_SELECTOR = 'p,li,h1,h2,h3,h4,h5,h6,td,th,pre,blockquote,figcaption'
 
 /** Props for the overlay half. */
-export interface BoostOverlayProps {
+export interface SelectionLayerProps {
   /** Plugin store. */
-  readonly store: BoostStore
+  readonly store: NotesStore
   /** Localized copy. */
-  readonly t: BoostTranslate
+  readonly t: Translate
 }
 
 /** Where the context menu sits and what it captured. */
@@ -66,11 +66,11 @@ function blockOf(node: Node): Element | null {
 /**
  * Whether a mutation happened inside this plugin's own chrome.
  * @param target - mutation target.
- * @returns true when the node belongs to an element stamped `data-dsh-boost`.
+ * @returns true when the node belongs to an element stamped `data-dsh-notes`.
  */
 function isOwn(target: Node): boolean {
   const element = target.nodeType === Node.ELEMENT_NODE ? target as Element : target.parentElement
-  return element !== null && element.closest('[data-dsh-boost]') !== null
+  return element !== null && element.closest('[data-dsh-notes]') !== null
 }
 
 /**
@@ -78,8 +78,8 @@ function isOwn(target: Node): boolean {
  * @param props - store and copy.
  * @returns the panel plus any open menu or composer.
  */
-export function BoostOverlay({ store, t }: BoostOverlayProps) {
-  const snapshot = useBoost(store)
+export function SelectionLayer({ store, t }: SelectionLayerProps) {
+  const snapshot = useNotes(store)
   const [menu, setMenu] = useState<MenuState | null>(null)
   const [composer, setComposer] = useState<ComposerState | null>(null)
   const [note, setNote] = useState('')
@@ -130,7 +130,7 @@ export function BoostOverlay({ store, t }: BoostOverlayProps) {
     const onPointerDown = (event: MouseEvent): void => {
       const target = event.target
       if (!(target instanceof Element)) return
-      if (target.closest('[data-dsh-boost]') === null) setComposer(null)
+      if (target.closest('[data-dsh-notes]') === null) setComposer(null)
     }
 
     /** Escape closes the composer; the menu listens for its own Escape. */
@@ -268,18 +268,18 @@ export function BoostOverlay({ store, t }: BoostOverlayProps) {
         portal
         compact
         align="start"
-        listClassName="dsh-boost-menu-surface"
+        listClassName="dsh-notes-menu-surface"
         items={menuItems}
         onSelect={handleMenuSelect}
         onClose={() => { setMenu(null) }}
         getAnchorRect={() => menu === null ? null : new DOMRect(menu.x, menu.y, 0, 0)}
-        anchor={<span data-boost-anchor="" />}
+        anchor={<span data-notes-anchor="" />}
       />
 
       {composer !== null && (
         <div
-          className="dsh-boost-composer"
-          data-dsh-boost=""
+          className="dsh-notes-composer"
+          data-dsh-notes=""
           style={{
             left: Math.min(composer.left, window.innerWidth - 320),
             top: Math.min(composer.bottom + 8, window.innerHeight - 160),
@@ -291,7 +291,7 @@ export function BoostOverlay({ store, t }: BoostOverlayProps) {
             placeholder={t('composer.placeholder')}
             onChange={event => { setNote(event.target.value) }}
           />
-          <div className="dsh-boost-composer-row">
+          <div className="dsh-notes-composer-row">
             <button
               type="button"
               onClick={() => {

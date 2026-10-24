@@ -10,16 +10,16 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { IconChevronDownOutlineRegular, Menu } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { MenuEntry } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { Annotation, Preset } from './contract.ts'
-import type { BoostTranslate } from './locales.ts'
-import type { BoostStore, ListFilter } from './store.ts'
-import { useBoost } from './useBoost.ts'
+import type { Translate } from './locales.ts'
+import type { NotesStore, ListFilter } from './store.ts'
+import { useNotes } from './useNotes.ts'
 
 /** Props for the panel card. */
 export interface AnnotationPanelProps {
   /** Plugin store. */
-  readonly store: BoostStore
+  readonly store: NotesStore
   /** Localized copy. */
-  readonly t: BoostTranslate
+  readonly t: Translate
 }
 
 /**
@@ -32,7 +32,7 @@ export interface AnnotationPanelProps {
  * @param instruction - what to do with the excerpt; empty for a plain hand-off.
  * @returns plain text blocks in reading order.
  */
-function composeText(t: BoostTranslate, annotation: Annotation, instruction: string): string {
+function composeText(t: Translate, annotation: Annotation, instruction: string): string {
   const quoted = annotation.quote.split('\n').map(line => `> ${line}`).join('\n')
   const blocks: string[] = [quoted]
   const note = annotation.note.trim()
@@ -69,7 +69,7 @@ function Chevron(): React.ReactElement {
  * @returns the panel card, or null while closed.
  */
 export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
-  const snapshot = useBoost(store)
+  const snapshot = useNotes(store)
   const [filterOpen, setFilterOpen] = useState(false)
   const [presetFor, setPresetFor] = useState<string | null>(null)
   const [overflowFor, setOverflowFor] = useState<string | null>(null)
@@ -118,7 +118,7 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
         const shift = columnWidth <= 0
           ? PANEL_WIDTH + 24
           : Math.max(0, Math.min(PANEL_WIDTH + 24, wanted))
-        document.documentElement.style.setProperty('--dsh-boost-shift', `${shift}px`)
+        document.documentElement.style.setProperty('--dsh-notes-shift', `${shift}px`)
       }
       setBox({ top, maxHeight: Math.max(160, limit - top), right })
     }
@@ -180,8 +180,8 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
 
   return (
     <section
-      className="dsh-boost-panel"
-      data-dsh-boost=""
+      className="dsh-notes-panel"
+      data-dsh-notes=""
       role="dialog"
       aria-label={t('panel.title')}
       onKeyDown={(event) => {
@@ -192,8 +192,8 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
       }}
       style={box === null ? undefined : { top: box.top, maxHeight: box.maxHeight, right: box.right }}
     >
-      <header className="dsh-boost-panel-head">
-        <span className="dsh-boost-panel-title">
+      <header className="dsh-notes-panel-head">
+        <span className="dsh-notes-panel-title">
           {t('panel.title')} · {t('panel.count', { count: visible.length })}
         </span>
         <Menu
@@ -201,7 +201,7 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
           align="start"
           compact
           portal
-          listClassName="dsh-boost-menu-surface"
+          listClassName="dsh-notes-menu-surface"
           items={filterItems}
           selectedId={snapshot.filter}
           onSelect={(id) => {
@@ -212,7 +212,7 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
           anchor={(
             <button
               type="button"
-              className="dsh-boost-trigger"
+              className="dsh-notes-trigger"
               aria-haspopup="menu"
               aria-expanded={filterOpen}
               onClick={() => { setFilterOpen(open => !open) }}
@@ -222,13 +222,13 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
             </button>
           )}
         />
-        <button type="button" className="dsh-boost-close" onClick={() => { store.togglePanel(false) }}>
+        <button type="button" className="dsh-notes-close" onClick={() => { store.togglePanel(false) }}>
           {t('panel.close')}
         </button>
       </header>
-      <ul className="dsh-boost-list">
+      <ul className="dsh-notes-list">
         {visible.length === 0 && (
-          <li className="dsh-boost-empty">
+          <li className="dsh-notes-empty">
             {snapshot.annotations.length === 0
               ? t('panel.empty')
               : snapshot.filter === 'mark' ? t('panel.emptyMarks') : t('panel.empty')}
@@ -251,7 +251,7 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
           return (
             <li
               key={annotation.id}
-              className="dsh-boost-item"
+              className="dsh-notes-item"
               data-kind={annotation.kind}
               data-active={snapshot.activeId === annotation.id ? 'true' : undefined}
               tabIndex={0}
@@ -268,17 +268,17 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
                   store.reveal(annotation.id)
                   return
                 }
-                const rows = [...(event.currentTarget.parentElement?.querySelectorAll('.dsh-boost-item') ?? [])]
+                const rows = [...(event.currentTarget.parentElement?.querySelectorAll('.dsh-notes-item') ?? [])]
                 const here = rows.indexOf(event.currentTarget)
                 const next = rows[here + (event.key === 'ArrowDown' ? 1 : -1)]
                 if (next instanceof HTMLElement) next.focus()
               }}
             >
-              <div className="dsh-boost-quote" data-kind={annotation.kind}>{annotation.quote}</div>
+              <div className="dsh-notes-quote" data-kind={annotation.kind}>{annotation.quote}</div>
               {editing?.id === annotation.id
                 ? (
                   <textarea
-                    className="dsh-boost-note-edit"
+                    className="dsh-notes-note-edit"
                     autoFocus
                     value={editing.text}
                     placeholder={t('item.notePlaceholder')}
@@ -302,10 +302,10 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
                   />
                 )
                 : (
-                  <div className="dsh-boost-note-row">
+                  <div className="dsh-notes-note-row">
                     <button
                       type="button"
-                      className="dsh-boost-icon-button"
+                      className="dsh-notes-icon-button"
                       aria-label={t('item.editNote')}
                       title={t('item.editNote')}
                       onClick={(event) => {
@@ -315,32 +315,32 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
                     >
                       <PencilIcon />
                     </button>
-                    <div className="dsh-boost-note" data-empty={annotation.note.trim() === '' ? 'true' : undefined}>
+                    <div className="dsh-notes-note" data-empty={annotation.note.trim() === '' ? 'true' : undefined}>
                       {annotation.note.trim() === '' ? t('item.notePlaceholder') : annotation.note}
                     </div>
                   </div>
                 )}
               {snapshot.diagnostics && (
-                <div className="dsh-boost-meta">
-                  <span className="dsh-boost-badge" data-status={status}>{status}</span>
+                <div className="dsh-notes-meta">
+                  <span className="dsh-notes-badge" data-status={status}>{status}</span>
                   <span>{`@${annotation.start}`}</span>
                 </div>
               )}
-              <div className="dsh-boost-actions">
+              <div className="dsh-notes-actions">
                 {annotation.kind === 'quote' && (
                   <button
                     type="button"
-                    className="dsh-boost-action"
+                    className="dsh-notes-action"
                     onClick={(event) => { event.stopPropagation(); handOff(annotation, '') }}
                   >
                     {t('item.add')}
                   </button>
                 )}
                 {annotation.kind === 'quote' && primaryPreset !== undefined && (
-                  <span className="dsh-boost-split">
+                  <span className="dsh-notes-split">
                     <button
                       type="button"
-                      className="dsh-boost-split-main"
+                      className="dsh-notes-split-main"
                       onClick={(event) => {
                         event.stopPropagation()
                         if (primaryPreset !== undefined) handOff(annotation, primaryPreset.prompt)
@@ -349,12 +349,12 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
                       {primaryPreset?.label ?? t('item.explain')}
                     </button>
                     <Menu
-                      className="dsh-boost-split-slot"
+                      className="dsh-notes-split-slot"
                       open={presetFor === annotation.id}
                       align="start"
                       compact
                       portal
-                      listClassName="dsh-boost-menu-surface"
+                      listClassName="dsh-notes-menu-surface"
                       items={presetItems}
                       onSelect={(id) => {
                         const preset = presets[Number(id.slice(1))]
@@ -365,7 +365,7 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
                       anchor={(
                         <button
                           type="button"
-                          className="dsh-boost-split-chevron"
+                          className="dsh-notes-split-chevron"
                           aria-label={t('item.morePresets')}
                           aria-haspopup="menu"
                           aria-expanded={presetFor === annotation.id}
@@ -381,12 +381,12 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
                   </span>
                 )}
                 <Menu
-                  className="dsh-boost-more-slot"
+                  className="dsh-notes-more-slot"
                   open={overflowFor === annotation.id}
                   align="end"
                   compact
                   portal
-                  listClassName="dsh-boost-menu-surface"
+                  listClassName="dsh-notes-menu-surface"
                   items={overflowItems}
                   onSelect={(id) => {
                     setOverflowFor(null)
@@ -397,7 +397,7 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
                   anchor={(
                     <button
                       type="button"
-                      className="dsh-boost-more"
+                      className="dsh-notes-more"
                       aria-label={t('item.more')}
                       aria-haspopup="menu"
                       aria-expanded={overflowFor === annotation.id}
@@ -415,12 +415,12 @@ export function AnnotationPanel({ store, t }: AnnotationPanelProps) {
           )
         })}
       </ul>
-      {unusable && <div className="dsh-boost-hint">{t('panel.lostHint')}</div>}
-      <footer className="dsh-boost-panel-foot">
-        {failure !== null && <span className="dsh-boost-foot-note" role="status">{failure}</span>}
+      {unusable && <div className="dsh-notes-hint">{t('panel.lostHint')}</div>}
+      <footer className="dsh-notes-panel-foot">
+        {failure !== null && <span className="dsh-notes-foot-note" role="status">{failure}</span>}
         <button
           type="button"
-          className="dsh-boost-foot-button"
+          className="dsh-notes-foot-button"
           data-on={snapshot.diagnostics ? 'true' : undefined}
           onClick={() => { store.toggleDiagnostics() }}
         >
