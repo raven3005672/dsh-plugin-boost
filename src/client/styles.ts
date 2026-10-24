@@ -215,24 +215,14 @@ body[data-ds-dark-theme] .dsh-boost-item[data-active='true'] {
     inset 0 0 0 1px rgba(255, 255, 255, 0.16);
 }
 
-.dsh-boost-quote[data-kind='mark'] {
-  background: color-mix(in srgb, #7dd3fc 38%, transparent);
-}
-/* The row carries a tint of the same hue, so the excerpt needs a step more
-   presence in the dark palette to stay the focal element. */
-body[data-ds-dark-theme] .dsh-boost-quote {
-  background: color-mix(in srgb, #ffc400 52%, transparent);
-}
-body[data-ds-dark-theme] .dsh-boost-quote[data-kind='mark'] {
-  background: color-mix(in srgb, #7dd3fc 52%, transparent);
-}
+/* The excerpt carries weight rather than a tint: with the row's colour bar and
+   the highlighted text in the transcript both already saying "quote", a third
+   coloured block read as noise. */
 .dsh-boost-quote {
   font-size: 12.5px;
+  font-weight: 600;
   line-height: 1.6;
   color: var(--dsw-alias-label-primary, #1f2328);
-  background: color-mix(in srgb, #ffc400 34%, transparent);
-  border-radius: 3px;
-  padding: 0 2px;
   display: block;
   white-space: nowrap;
   overflow: hidden;
