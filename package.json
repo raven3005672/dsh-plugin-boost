@@ -4,7 +4,7 @@
   "description": "Annotations for DeepSeek Harness: select text in an answer, highlight or quote it with a note, and drop the excerpt back into the composer.",
   "license": "MIT",
   "type": "module",
-  "icon": "icon.svg",
+  "icon": "icon.png",
   "main": "lib/index.js",
   "exports": {
     ".": "./lib/index.js",
@@ -17,7 +17,7 @@
     "lib",
     "cordis.patch.yml",
     "locale",
-    "icon.svg",
+    "icon.png",
     "CHANGELOG.md"
   ],
   "keywords": [
