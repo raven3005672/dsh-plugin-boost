@@ -3,6 +3,7 @@
 ## 未发布
 
 - 补齐发布所需元数据：`repository`、`packageManager`、`screenshots.json`（市场每晚抓取），README 增加截图（用 raw 链接，npm 页面上也能显示）。
+- 设置页新增「复制诊断信息」：输出计数、定位状态、能力开关与存储体积，**不含引文、备注和会话 id**。
 - 新增 `.github/workflows/publish.yml`：tag 触发、OIDC 可信发布、先 build 再 typecheck/test/smoke、`npm publish --provenance`。npm 侧还需一次性配置 Trusted publisher。
 
 - 文案清理：删除 4 个已无人使用的键（`item.noteHint`、`item.unnamed`、`menu.cancel`、`settings.summary`），英文药丸标签由 `Notes` 统一为 `Annotations`（与卡片标题、面板标题一致）。中英两套键集仍由类型强制对齐。
