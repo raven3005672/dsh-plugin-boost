@@ -1,6 +1,6 @@
 # Changelog
 
-## 未发布
+## 0.1.0 — 2026-10-25
 
 - 补齐发布所需元数据：`repository`、`packageManager`、`screenshots.json`（市场每晚抓取），README 增加截图（用 raw 链接，npm 页面上也能显示）。
 - 设置页新增「复制诊断信息」：输出计数、定位状态、能力开关与存储体积，**不含引文、备注和会话 id**。
