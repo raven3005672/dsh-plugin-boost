@@ -15,15 +15,18 @@ import { pathToFileURL } from 'node:url'
 
 const dir = mkdtempSync(join(tmpdir(), 'dsh-notes-test-'))
 try {
-  await build({
-    entryPoints: ['src/client/anchor.ts'],
-    outfile: join(dir, 'anchor.mjs'),
+  const compile = entry => build({
+    entryPoints: [entry],
+    outfile: join(dir, `${entry.split('/').pop().replace('.ts', '')}.mjs`),
     bundle: true,
     format: 'esm',
     platform: 'node',
     logLevel: 'silent',
   })
+  await compile('src/client/anchor.ts')
+  await compile('src/client/store.ts')
   const { resolveRange } = await import(pathToFileURL(join(dir, 'anchor.mjs')).href)
+  const { normalizeAnnotation } = await import(pathToFileURL(join(dir, 'store.mjs')).href)
 
   let failures = 0
   const cases = []
@@ -74,6 +77,22 @@ try {
   check('an empty quote never resolves',
     resolveRange(text, '', '', '', 0),
     null)
+
+  const record = (extra) => ({
+    id: 'a1', sessionId: 's1', kind: 'quote', nodeKey: 'n1', flowKey: 'f1',
+    start: 4, end: 10, quote: 'excerpt', prefix: '', suffix: '', note: '', createdAt: '2026-01-01T00:00:00.000Z',
+    ...extra,
+  })
+
+  check('a stored note keeps its kind', normalizeAnnotation(record({}))?.kind, 'quote')
+  check('a stored mark keeps its kind', normalizeAnnotation(record({ kind: 'mark' }))?.kind, 'mark')
+  check('a record with no kind reads as a note', normalizeAnnotation(record({ kind: undefined }))?.kind, 'quote')
+  check('a kind from a newer version reads as a note', normalizeAnnotation(record({ kind: 'todo' }))?.kind, 'quote')
+  check('unknown fields survive a downgrade',
+    normalizeAnnotation(record({ starred: true }))?.starred, true)
+  check('a record without a quote is rejected', normalizeAnnotation(record({ quote: undefined })), undefined)
+  check('a record without offsets is rejected', normalizeAnnotation(record({ start: undefined })), undefined)
+  check('a non-object record is rejected', normalizeAnnotation('nope'), undefined)
 
   for (const line of cases) console.log(line)
   if (failures > 0) {

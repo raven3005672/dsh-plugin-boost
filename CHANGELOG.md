@@ -2,6 +2,8 @@
 
 ## 未发布
 
+- 存储读取收口到 `normalizeAnnotation()`：未知字段原样保留（新版本写的数据降级后不会被抹掉），而**未知的 kind 一律按「可引用」读入**——原来这类记录会整条被过滤掉，下一次写入就永久消失。补了 8 条用例覆盖这两条规则。
+
 - 清掉代码里残留的 `boost` 命名（218 处）：`BoostStore` → `NotesStore`、`BoostOverlay` → `SelectionLayer`、`BoostSettingsRow/Section` → `SettingsPage/Section`、`useBoost` → `useNotes`、`BoostKey/Translate` → `CopyKey/Translate`；CSS 前缀与高亮注册名 `dsh-boost-*` → `dsh-notes-*`，属性 `data-dsh-boost-shift` → `data-dsh-notes-shift`。
 - 旧键的读取兼容也一并删除：插件尚无外部使用者，不做数据迁移。
 

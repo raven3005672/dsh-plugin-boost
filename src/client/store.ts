@@ -78,23 +78,37 @@ function readStored(sessionId: string): Annotation[] {
     if (raw === null) return []
     const parsed: unknown = JSON.parse(raw)
     if (!Array.isArray(parsed)) return []
-    // Records written before kinds existed are actionable notes: that was the
-    // only behaviour, so restoring them as marks would silently hide them.
-    return parsed.map(item => ({ ...(item as Annotation), kind: (item as Partial<Annotation>).kind ?? 'quote' }))
-      .filter((item): item is Annotation => {
-      if (typeof item !== 'object' || item === null) return false
-      const candidate = item as Partial<Annotation>
-      return typeof candidate.id === 'string'
-        && (candidate.kind === undefined || candidate.kind === 'mark' || candidate.kind === 'quote')
-        && typeof candidate.nodeKey === 'string'
-        && typeof candidate.start === 'number'
-        && typeof candidate.end === 'number'
-        && typeof candidate.quote === 'string'
+    return parsed.flatMap(item => {
+      const normalized = normalizeAnnotation(item)
+      return normalized === undefined ? [] : [normalized]
     })
   } catch {
     // Storage disabled or hand-edited content: start empty rather than crash.
     return []
   }
+}
+
+/**
+ * Turn one stored record into an annotation this build can render.
+ *
+ * Unknown fields are carried through, so a newer version's extra data survives
+ * a downgrade instead of being erased on the next write. Unknown kinds are the
+ * one thing that must not pass through: an unrecognised type would paint into
+ * no registry and filter out of every view, so the next write would delete it.
+ * Such a record is kept as an actionable note, which is the superset behaviour.
+ * @param item - one parsed storage record.
+ * @returns the annotation, or undefined when the record is unusable.
+ */
+export function normalizeAnnotation(item: unknown): Annotation | undefined {
+  if (typeof item !== 'object' || item === null) return undefined
+  const candidate = item as Partial<Annotation>
+  if (typeof candidate.id !== 'string') return undefined
+  if (typeof candidate.nodeKey !== 'string') return undefined
+  if (typeof candidate.start !== 'number' || typeof candidate.end !== 'number') return undefined
+  if (typeof candidate.quote !== 'string') return undefined
+  // Records written before kinds existed are notes; so is a kind from the future.
+  const kind = candidate.kind === 'mark' ? 'mark' : 'quote'
+  return { ...(item as Annotation), kind }
 }
 
 /**
