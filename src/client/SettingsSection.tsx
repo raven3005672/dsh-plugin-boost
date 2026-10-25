@@ -27,6 +27,8 @@ export interface SettingsSectionProps {
   t?(key: CopyKey): string
   /** Row settings form, resolved from the plugin's own namespace. */
   form: SettingsForm
+  /** Builds the bug-report payload. */
+  diagnostics?(): string
 }
 
 /**
@@ -34,7 +36,7 @@ export interface SettingsSectionProps {
  * @param props - form face and the namespace translator.
  * @returns the settings page body.
  */
-export function SettingsSection({ t, form }: SettingsSectionProps): ReactElement {
+export function SettingsSection({ t, form, diagnostics }: SettingsSectionProps): ReactElement {
   const [state, setState] = useState<SettingsConfigState>(() => form.getSnapshot())
 
   useEffect(() => {
@@ -49,6 +51,7 @@ export function SettingsSection({ t, form }: SettingsSectionProps): ReactElement
   return (
     <SettingsPage
       t={t}
+      diagnostics={diagnostics}
       form={{ state, mutate: (ops, revision) => form.mutate(ops, revision) }}
     />
   )

@@ -43,6 +43,8 @@ export interface SettingsConfigState {
 export interface SettingsPageProps {
   /** Namespace translator supplied by the slot registration. */
   t?(key: CopyKey): string
+  /** Builds the bug-report payload; absent when the store is not wired. */
+  diagnostics?(): string
   /** Row settings face, absent while the namespace is not served. */
   form?: {
     state: SettingsConfigState
@@ -67,9 +69,10 @@ function hasStoredPresets(user: unknown): boolean {
  * @param props - owner props supplied by the settings section.
  * @returns the heading, the shortcut rows and their actions.
  */
-export function SettingsPage({ form, t }: SettingsPageProps): ReactElement | null {
+export function SettingsPage({ form, t, diagnostics }: SettingsPageProps): ReactElement | null {
   const copy = (key: CopyKey): string => t?.(key) ?? key
   const [draft, setDraft] = useState<Preset[] | null>(null)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     if (form === undefined) return
@@ -163,6 +166,23 @@ export function SettingsPage({ form, t }: SettingsPageProps): ReactElement | nul
         >
           {copy('settings.reset')}
         </Button>
+        {diagnostics !== undefined && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              void navigator.clipboard?.writeText(diagnostics()).then(
+                () => {
+                  setCopied(true)
+                  window.setTimeout(() => { setCopied(false) }, 2000)
+                },
+                () => { /* Clipboard refused; the button simply stays idle. */ },
+              )
+            }}
+          >
+            {copied ? copy('settings.copied') : copy('settings.copyDiagnostics')}
+          </Button>
+        )}
       </div>
     </div>
   )

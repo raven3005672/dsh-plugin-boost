@@ -172,6 +172,38 @@ export class NotesStore {
   }
 
   /**
+   * Build a bug-report payload: counts and capabilities only.
+   *
+   * Quotes, notes and session ids stay out of it — the point is to describe
+   * the state that broke, not the user's text.
+   * @returns JSON text ready for the clipboard.
+   */
+  diagnosticsReport(): string {
+    const counts: Record<string, number> = { exact: 0, fuzzy: 0, lost: 0, missing: 0 }
+    for (const status of this.statuses.values()) counts[status] = (counts[status] ?? 0) + 1
+    let storageBytes = 0
+    try {
+      storageBytes = this.sessionId === undefined ? 0 : (localStorage.getItem(storageKey(this.sessionId))?.length ?? 0)
+    } catch {
+      // Storage disabled: report 0 rather than failing the copy.
+    }
+    return JSON.stringify({
+      plugin: 'dsh-plugin-highlight-notes',
+      annotations: {
+        total: this.annotations.length,
+        quote: this.annotations.filter(item => item.kind === 'quote').length,
+        mark: this.annotations.filter(item => item.kind === 'mark').length,
+        located: counts,
+      },
+      highlights: typeof CSS !== 'undefined' && CSS.highlights !== undefined,
+      diagnosticsToggle: this.diagnostics,
+      filter: this.filter,
+      presets: this.presets === undefined ? 'built-in' : this.presets.length,
+      storageBytes,
+    }, null, 2)
+  }
+
+  /**
    * Called when the conversation view unmounts: dismiss the panel and the
    * transient surfaces that belong to it.
    */

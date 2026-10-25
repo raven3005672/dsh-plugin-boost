@@ -137,6 +137,9 @@ export function apply(ctx: Context): void {
     order: 40,
     label: () => ctx.locale.bind(LOCALE_NS)('nav'),
     locale: LOCALE_NS,
-    inject: () => ({ form: ctx.configForms.get<{ presets?: Preset[] }>(SETTINGS_NAMESPACE) }),
+    inject: () => ({
+      form: ctx.configForms.get<{ presets?: Preset[] }>(SETTINGS_NAMESPACE),
+      diagnostics: () => store.diagnosticsReport(),
+    }),
   }, SettingsSection))
 }
