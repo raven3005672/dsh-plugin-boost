@@ -4,6 +4,11 @@
 
 全部逻辑跑在**浏览器半边**，不碰会话日志、模型请求、文件系统。批注只存在你这台机器的浏览器里。
 
+## 截图
+
+<img src="https://raw.githubusercontent.com/raven3005672/dsh-plugin-highlight-notes/master/docs/screenshots/panel-light.png" width="330" alt="标注列表与面板">
+<img src="https://raw.githubusercontent.com/raven3005672/dsh-plugin-highlight-notes/master/docs/screenshots/settings-section.png" width="330" alt="设置页">
+
 ## 功能
 
 | 功能 | 说明 |
